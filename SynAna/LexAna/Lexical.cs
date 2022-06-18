@@ -334,7 +334,7 @@ namespace SynAna.LexAna
                 if (_character == @case.Character)
                 {
                     AppendCharacter();
-                    return AnalysePossibleCases(@case.Token, @case.Sequences);
+                    return AnalysePossibleCases(@case.Token, @case.Cases);
                 }
 
             UnreadChar();

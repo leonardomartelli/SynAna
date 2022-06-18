@@ -4,7 +4,6 @@
 	{
 		LexicalError = -1,
 		EOF,
-		ReservedWord,
 		Identifier,
 		IntegerConstant,
 		FloatingPointConstant,
