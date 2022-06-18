@@ -104,14 +104,220 @@ assignment_expression
 
 assignment_operator
 	: Assign
-	| MUL_ASSIGN
-	| DIV_ASSIGN
-	| MOD_ASSIGN
-	| ADD_ASSIGN
-	| SUB_ASSIGN
-	| LEFT_ASSIGN
-	| RIGHT_ASSIGN
-	| AND_ASSIGN
-	| XOR_ASSIGN
-	| OR_ASSIGN
+	| ProductAssign
+	| DivisionAssign
+	| ModulusAssign
+	| PlusAssign
+	| MinusAssign
+	| LeftAssign
+	| RightAssign
+    // in obs
+	| AndAssign
+	| XorAssign
+	| OrAssign
+	;
+
+expression
+    : assignment_expression
+    | expression Comma assignment_expression
+    ;
+
+constant_expression
+    : logical_or_expression
+    ;
+
+declaration
+	: declaration_specifiers SemiCollon
+	| declaration_specifiers init_declarator_list SemiCollon
+	;
+
+declaration_specifiers
+	: type_specifier
+	| type_specifier declaration_specifiers
+    ;
+
+init_declarator_list
+	: init_declarator
+	| init_declarator_list Comma init_declarator
+	;
+
+init_declarator
+	: declarator
+	| declarator Assign initializer
+	;
+
+type_specifier
+	: Void
+	| Char
+	| Int
+	| Long
+	| Float
+	| Double
+	| Unsigned
+	| struct_specifier
+	;
+
+struct_or_union_specifier
+	: Struct Identifier BraceOpen struct_declaration_list BraceClose
+	| Struct BraceOpen struct_declaration_list BraceClose
+	| Struct Identifier
+	;
+
+struct_declaration_list
+	: struct_declaration
+	| struct_declaration_list struct_declaration
+	;
+
+struct_declaration
+	: specifier_list struct_declarator_list SemiCollon
+	;
+
+specifier_list
+	: type_specifier specifier_list
+	| type_specifier
+    ;
+
+struct_declarator_list
+	: struct_declarator
+	| struct_declarator_list Comma struct_declarator
+	;
+
+struct_declarator
+	: declarator
+	| Collon constant_expression
+	| declarator Collon constant_expression
+	;
+
+declarator
+	: pointer direct_declarator
+	| direct_declarator
+	;
+
+direct_declarator
+	: Identifier
+	| ParenthisOpen declarator ParenthisClose
+	| direct_declarator BracketOpen constant_expression BracketClose
+	| direct_declarator BracketOpen BracketClose
+	| direct_declarator ParenthisOpen parameter_type_list ParenthisClose
+	| direct_declarator ParenthisOpen identifier_list ParenthisClose
+	| direct_declarator ParenthisOpen ParenthisClose
+	;
+
+pointer
+	: Product
+	| Product pointer
+	;
+
+parameter_list
+	: parameter_declaration
+	| parameter_list Comma parameter_declaration
+	;
+
+parameter_declaration
+	: declaration_specifiers declarator
+	| declaration_specifiers abstract_declarator
+	| declaration_specifiers
+	;
+
+identifier_list
+	: Identifier
+	| identifier_list comma Identifier
+	;
+
+type_name
+	: specifier_list
+	| specifier_list abstract_declarator
+	;
+
+abstract_declarator
+	: pointer
+	| direct_abstract_declarator
+	| pointer direct_abstract_declarator
+	;
+
+direct_abstract_declarator
+	: ParenthesisOpen abstract_declarator ParenthesisClose
+	| BracketOpen BracketClose
+	| BracketOpen constant_expression BracketClose
+	| direct_abstract_declarator BracketOpen BracketClose
+	| direct_abstract_declarator BracketOpen constant_expression BracketClose
+	| ParenthesisOpen ParenthesisClose
+	| ParenthesisOpen parameter_type_list ParenthesisClose
+	| direct_abstract_declarator ParenthesisOpen ParenthesisClose
+	| direct_abstract_declarator ParenthesisOpen parameter_type_list ParenthesisClose
+	;
+
+initializer
+	: assignment_expression
+	| BraceOpen initializer_list BraceClose
+	| BraceOpen initializer_list Comma BraceClose
+	;
+
+initializer_list
+	: initializer
+	| initializer_list Comma initializer
+	;
+
+statement
+	: labeled_statement
+	| compound_statement
+	| expression_statement
+	| selection_statement
+	| iteration_statement
+	| jump_statement
+	;
+
+labeled_statement
+	: identifier Collon statement // in obs
+	| Case constant_expression Collon statement
+	| Default Collon statement
+	;
+
+compound_statement
+	: BraceOpen BraceClose
+	| BraceOpen statement_list BraceClose
+	| BraceOpen declaration_list BraceClose
+	| BraceOpen declaration_list statement_list BraceClose
+	;
+
+declaration_list
+	: declaration
+	| declaration_list declaration
+	;
+
+statement_list
+	: statement
+	| statement_list statement
+	;
+
+expression_statement
+	: SemiCollon
+	| expression SemiCollon
+	;
+
+selection_statement
+	: If ParenthesisOpen expression ParenthesisClose statement
+	| If ParenthesisOpen expression ParenthesisClose statement Else statement
+	| Switch ParenthesisOpen expression ParenthesisClose statement
+	;
+
+iteration_statement
+	: While ParenthesisOpen expression ParenthesisClose statement
+	| Do statement While ParenthesisOpen expression ParenthesisClose SemiCollon
+	| For ParenthesisOpen expression_statement expression_statement ParenthesisClose statement
+	| For ParenthesisOpen expression_statement expression_statement expression ParenthesisClose statement
+	;
+
+jump_statement
+	: Continue SemiCollon
+	| Break SemiCollon
+	| Return SemiCollon
+	| Return expression SemiCollon
+	;
+
+function_definition
+	: declaration_specifiers declarator declaration_list compound_statement
+	| declaration_specifiers declarator compound_statement
+	| declarator declaration_list compound_statement
+	| declarator compound_statement
 	;

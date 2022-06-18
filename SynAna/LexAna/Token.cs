@@ -74,6 +74,8 @@
 		Float,				// float
 		Struct,				// struct
 		Void,				// void
+		Long,				// long
+		Unsigned,			// unsigned
 
 		//Pointers
 		StructAccessor,		// ->
