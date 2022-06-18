@@ -72,7 +72,7 @@ equality_expression
 	| equality_expression NotEquals relational_expression
 	;
 
-    and_expression
+and_expression
 	: equality_expression
 	| and_expression And equality_expression
 	;
@@ -106,15 +106,11 @@ assignment_operator
 	: Assign
 	| ProductAssign
 	| DivisionAssign
-	| ModulusAssign
+	| ModuleAssign
 	| PlusAssign
 	| MinusAssign
 	| LeftAssign
 	| RightAssign
-    // in obs
-	| AndAssign
-	| XorAssign
-	| OrAssign
 	;
 
 expression
@@ -148,19 +144,32 @@ init_declarator
 
 type_specifier
 	: Void
-	| Char
-	| Int
-	| Long
-	| Float
-	| Double
-	| Unsigned
+	| primitive_type_specifier
+	| unsigned_specifier
 	| struct_specifier
 	;
 
-struct_or_union_specifier
+primitive_type_specifier
+    : Char
+	| Int
+	| Float
+	| Double
+	| long_int_specifier
+    ;
+
+long_int_specifier
+    : Long long_int_specifier
+    | Long Int
+    ;
+
+unsigned_specifier
+    : Unsigned primitive_type_specifier
+    ;
+
+struct_specifier
 	: Struct Identifier BraceOpen struct_declaration_list BraceClose
-	| Struct BraceOpen struct_declaration_list BraceClose
 	| Struct Identifier
+	| Struct BraceOpen struct_declaration_list BraceClose
 	;
 
 struct_declaration_list
@@ -203,9 +212,14 @@ direct_declarator
 	| direct_declarator ParenthisOpen ParenthisClose
 	;
 
+parameter_type_list
+	: parameter_list
+	| parameter_list Comma Ellipsis
+	;
+
 pointer
-	: Product
-	| Product pointer
+	: Product pointer
+	| Product
 	;
 
 parameter_list

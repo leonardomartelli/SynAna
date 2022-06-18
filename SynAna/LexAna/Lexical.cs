@@ -170,6 +170,14 @@ namespace SynAna.LexAna
             else if (_character == ',')
                 return ComputeToken(Token.Comma);
 
+            else if (_character == '.')
+                return AnalysePossibleCases(Token.Dot,
+                    new Case('.', Token.LexicalError,
+                        new Case('.', Token.Ellipsis)));
+
+            else if (_character == ':')
+                return AnalysePossibleCases(Token.Collon);
+
             else if (_character == '=')
                 return AnalysePossibleCases(Token.Assign,
                     new Case('=', Token.Equals));
@@ -229,12 +237,6 @@ namespace SynAna.LexAna
 
             else if (_character == '~')
                 return AnalysePossibleCases(Token.Negate);
-
-            else if (_character == '.')
-                return AnalysePossibleCases(Token.Dot);
-
-            else if (_character == ':')
-                return AnalysePossibleCases(Token.Collon);
 
             return default;
         }

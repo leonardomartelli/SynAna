@@ -91,6 +91,9 @@
 		BracketClose,		// ]
 		BraceOpen,			// {
 		BraceClose,			// }
+
+		//Parameters
+		Ellipsis			// ...
 	}
 }
 
