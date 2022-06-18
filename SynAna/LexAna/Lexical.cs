@@ -2,24 +2,8 @@
 using System.Collections.Generic;
 using System.IO;
 
-namespace LexAna
+namespace SynAna.LexAna
 {
-    struct Case
-    {
-        internal Case(char character, Token token, params Case[] cases)
-        {
-            Token = token;
-            Character = character;
-            Sequences = cases;
-
-        }
-
-        internal readonly Token Token;
-        internal readonly char Character;
-
-        internal readonly Case[] Sequences;
-    }
-
     public class Lexical
     {
         private readonly IDictionary<string, Token> _reservedWords =
@@ -35,7 +19,9 @@ namespace LexAna
                 { "if", Token.If },
                 { "else", Token.Else },
                 { "for", Token.For },
-                { "struct", Token.Struct }
+                { "struct", Token.Struct },
+                { "unsigned", Token.Unsigned },
+                { "long", Token.Long }
             };
 
         private readonly StreamReader _inputStream;
@@ -49,9 +35,9 @@ namespace LexAna
         private State _state;
 
         private bool _hasPoint;
-        private bool _scape;
         private bool _eof;
 
+        private IList<TokenResult> _lexicalResult;
 
         public Lexical(StreamReader inputStream, string resultsFolder)
         {
@@ -63,14 +49,16 @@ namespace LexAna
             _currentColumn = _currentLine = 0;
             _state = State.Initial;
 
-            _hasPoint = _eof = _scape = false;
+            _hasPoint = _eof = false;
 
             _inputStream = inputStream;
 
             _outputStream = SetupResultsWriting(resultsFolder);
+
+            _lexicalResult = new List<TokenResult>();
         }
 
-        public void Analyse()
+        public IEnumerable<TokenResult> Analyse()
         {
             ReadChar();
 
@@ -90,6 +78,8 @@ namespace LexAna
 
             _inputStream.Close();
             _outputStream.Close();
+
+            return _lexicalResult;
         }
 
         private void ReadLine()
@@ -129,8 +119,6 @@ namespace LexAna
                 case State.Number:
                     return ReadNumberToken();
 
-                case State.String:
-                    return ReadStringToken();
                 default:
                     break;
             }
@@ -156,12 +144,6 @@ namespace LexAna
             {
                 ReadChar();
                 _state = State.Number;
-            }
-
-            else if (_character == '"')
-            {
-                ReadChar();
-                _state = State.String;
             }
 
             else if (_character == '(')
@@ -321,27 +303,6 @@ namespace LexAna
 
         }
 
-        private TokenResult ReadStringToken()
-        {
-            if (_scape || _character != '"')
-            {
-                ReadChar();
-
-                if (!_scape && _character == '\\')
-                    _scape = true;
-                else
-                    _scape = false;
-
-                return default;
-            }
-            else
-            {
-                _state = State.Initial;
-
-                return ComputeToken(Token.StringConstant);
-            }
-        }
-
         private TokenResult ComputeToken(Token token)
         {
             GetContext(out int lineNumber, out int columnNumber, out string lexical);
@@ -388,6 +349,8 @@ namespace LexAna
             _outputStream.WriteLine(tokenResult);
 
             Console.WriteLine(tokenResult);
+
+            _lexicalResult.Add(tokenResult);
         }
 
         private void CleanLexical() =>

@@ -1,4 +1,4 @@
-﻿namespace LexAna
+﻿namespace SynAna.LexAna
 {
 	public enum State
 	{

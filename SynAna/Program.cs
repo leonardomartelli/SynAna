@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
 using System.IO;
-using LexAna;
+using SynAna.LexAna;
 
 var fileName = Debugger.IsAttached ? "testfile.c" : AskUserFileName();
 

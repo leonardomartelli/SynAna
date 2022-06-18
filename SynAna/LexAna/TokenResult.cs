@@ -1,6 +1,6 @@
 ﻿using System.Linq;
 
-namespace LexAna
+namespace SynAna.LexAna
 {
     public record TokenResult
     {
