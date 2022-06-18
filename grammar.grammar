@@ -315,6 +315,11 @@ jump_statement
 	| Return expression SemiCollon
 	;
 
+external_declaration
+	: function_definition
+	| declaration
+	;
+
 function_definition
 	: declaration_specifiers declarator declaration_list compound_statement
 	| declaration_specifiers declarator compound_statement
