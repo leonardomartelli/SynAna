@@ -1132,7 +1132,7 @@ namespace SynAna
                 return true;
 
             // ParenthisOpen expression ParenthisClose
-            if(IsToken(Token.ParenthesisOpen))
+            if (IsToken(Token.ParenthesisOpen))
             {
                 ReadToken();
 
@@ -1164,7 +1164,7 @@ namespace SynAna
                 return true;
 
             // expression Comma assignment_expression
-            if(expression())
+            if (expression())
             {
                 ReadToken();
 
@@ -1195,7 +1195,7 @@ namespace SynAna
                 return true;
 
             // unary_expression assignment_operator assignment_expression
-            if(unary_expression())
+            if (unary_expression())
             {
                 ReadToken();
 
@@ -1251,11 +1251,11 @@ namespace SynAna
                 return true;
 
             // argument_expression_list Comma assignment_expression
-            else if(argument_expression_list())
+            else if (argument_expression_list())
             {
                 ReadToken();
 
-                if(IsToken(Token.Comma))
+                if (IsToken(Token.Comma))
                 {
                     ReadToken();
 
@@ -1292,8 +1292,8 @@ namespace SynAna
         }
 
         // parameter_type_list
-	    // : parameter_list
-	    // | parameter_list Comma Ellipsis
+        // : parameter_list
+        // | parameter_list Comma Ellipsis
         bool parameter_type_list()
         {
             // parameter_list
@@ -1323,8 +1323,8 @@ namespace SynAna
         }
 
         // parameter_list
-	    // : parameter_declaration
-	    // | parameter_list Comma parameter_declaration
+        // : parameter_declaration
+        // | parameter_list Comma parameter_declaration
         bool parameter_list()
         {
             // parameter_declaration
@@ -1355,10 +1355,9 @@ namespace SynAna
         }
 
         // parameter_declaration
-	    // : declaration_specifiers declarator
-	    // | declaration_specifiers abstract_declarator
-	    // | declaration_specifiers
-
+        // : declaration_specifiers declarator
+        // | declaration_specifiers abstract_declarator
+        // | declaration_specifiers
         bool parameter_declaration()
         {
             // declaration_specifiers declarator
@@ -1371,15 +1370,27 @@ namespace SynAna
                 if (declarator())
                     return true;
 
+                //abstract_declarator
                 else if (abstract_declarator())
                     return true;
 
                 UnreadToken();
+
+                return true;
             }
 
             return false;
         }
-	
+
+        // abstract_declarator
+        // : pointer
+        // | direct_abstract_declarator
+        // | pointer direct_abstract_declarator
+        bool abstract_declarator()
+        {
+            if(pointer())
+        }
+
     }
 }
 
