@@ -20,7 +20,9 @@ namespace SynAna
                     ? _lexicalResultEnumerator.Current
                     : Token.EOF;
 
-        // external_declaration -> function_defintion | declaration
+        // external_declaration
+        //  : function_defintion
+        //  | declaration
         bool external_declaration()
         {
             if (function_definition())
@@ -32,39 +34,55 @@ namespace SynAna
             return false;
         }
 
+       // function_definition
+       //   : declaration_specifiers declarator declaration_list compound_statement
+	   //   | declaration_specifiers declarator compound_statement
+	   //   | declarator declaration_list compound_statement
+	   //   | declarator compound_statement
         bool function_definition()
         {
+            //   declaration_specifiers declarator declaration_list compound_statement
+            // | declaration_specifiers declarator compound_statement
             if (declaration_specifiers())
             {
                 ReadToken();
-
+                //   declarator declaration_list compound_statement
+                // | declarator compound_statement
                 if (declarator())
                 {
                     ReadToken();
 
+                    //declaration_list compound_statement
                     if (declaration_list())
                     {
                         ReadToken();
 
+                        // compound_statement
                         if (compound_statement())
                             return true;
                     }
+                    // compound_statement
                     else if (compound_statement())
                         return true;
                 }
 
             }
+            //   declarator declaration_list compound_statement
+	        // | declarator compound_statement
             else if (declarator())
             {
                 ReadToken();
 
+                // declaration_list compound_statement
                 if (declaration_list())
                 {
                     ReadToken();
-
+                    // compound_statement
                     if (compound_statement())
                         return true;
                 }
+
+                // compound_statement
                 else if (compound_statement())
                     return true;
             }
