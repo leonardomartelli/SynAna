@@ -52,7 +52,7 @@
 
         //Language Commands
         For,                // for
-        DoWhile,			// do {} while
+        Do,					// do
 		While,				// while
 		If,					// if
 		ElseIf,				// else if

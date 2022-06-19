@@ -7,13 +7,13 @@ namespace SynAna
 {
     public class Syntactic
     {
-        private Token _currentToken;
+        private TokenResult _currentTokenResult;
         private int _position;
 
-        private readonly IEnumerable<Token> _lexicalResult;
+        private readonly IEnumerable<TokenResult> _lexicalResult;
         private readonly int _lexicalsCount;
 
-        public Syntactic(IEnumerable<Token> lexicalResult)
+        public Syntactic(IEnumerable<TokenResult> lexicalResult)
         {
             _lexicalResult = lexicalResult;
             _lexicalsCount = _lexicalResult.Count();
@@ -21,24 +21,34 @@ namespace SynAna
             _position = 0;
         }
 
+        public void Analyze()
+        {
+            ReadToken();
+
+            if (external_declaration())
+                Console.WriteLine("Valid program");
+            else
+                Console.WriteLine("NOT Valid Program");
+        }
+
         void ReadToken()
         {
             if (_position < _lexicalsCount)
-                _currentToken = _lexicalResult.ElementAt(_position++);
+                _currentTokenResult = _lexicalResult.ElementAt(_position++);
             else
-                _currentToken = Token.EOF;
+                _currentTokenResult = default;
         }
 
         void UnreadToken()
         {
             if (_position > 0)
-                _currentToken = _lexicalResult.ElementAt(--_position);
+                _currentTokenResult = _lexicalResult.ElementAt(--_position);
             else
-                _currentToken = Token.EOF;
+                _currentTokenResult = default;
         }
 
         bool IsToken(Token token) =>
-            _currentToken == token;
+            _currentTokenResult?.Token == token;
 
         // external_declaration
         //  : function_defintion
@@ -135,10 +145,12 @@ namespace SynAna
                 // declaration_specifiers
                 if (declaration_specifiers())
                     return true;
+                else
+                {
+                    UnreadToken();
 
-                UnreadToken();
-
-                return true;
+                    return true;
+                }
             }
 
             return false;
@@ -270,10 +282,15 @@ namespace SynAna
 
                         UnreadToken();
                     }
+                    else
+                    {
+
+                        UnreadToken();
+
+                        return true;
+                    }
 
                     UnreadToken();
-
-                    return true;
                 }
                 else if (IsToken(Token.BraceOpen))
                 {
@@ -364,10 +381,12 @@ namespace SynAna
                 // specifier_list
                 if (specifier_list())
                     return true;
+                else
+                {
+                    UnreadToken();
 
-                UnreadToken();
-
-                return true;
+                    return true;
+                }
             }
 
             // type_specifier
@@ -413,9 +432,12 @@ namespace SynAna
                 if (pointer())
                     return true;
 
-                UnreadToken();
+                else
+                {
+                    UnreadToken();
 
-                return true;
+                    return true;
+                }
             }
 
             return false;
@@ -470,7 +492,7 @@ namespace SynAna
                     ReadToken();
 
                     // constant_expression BracketClose
-                    if (constant_expression())
+                    if (logical_or_expression())
                     {
                         ReadToken();
 
@@ -528,17 +550,6 @@ namespace SynAna
 
                 UnreadToken();
             }
-
-            return false;
-        }
-
-        // constant_expression
-        // : logical_or_expression
-        bool constant_expression()
-        {
-            // logical_or_expression
-            if (logical_or_expression())
-                return true;
 
             return false;
         }
@@ -1214,7 +1225,7 @@ namespace SynAna
                 UnreadToken();
             }
 
-            return true;
+            return false;
         }
 
         // assignment_operator
@@ -1313,10 +1324,14 @@ namespace SynAna
 
                     UnreadToken();
                 }
+                else
+                {
+                    UnreadToken();
+
+                    return true;
+                }
 
                 UnreadToken();
-
-                return true;
             }
 
             return false;
@@ -1374,9 +1389,12 @@ namespace SynAna
                 else if (abstract_declarator())
                     return true;
 
-                UnreadToken();
+                else
+                {
+                    UnreadToken();
 
-                return true;
+                    return true;
+                }
             }
 
             return false;
@@ -1388,9 +1406,835 @@ namespace SynAna
         // | pointer direct_abstract_declarator
         bool abstract_declarator()
         {
-            if(pointer())
+            // pointer direct_abstract_declarator
+            if (pointer())
+            {
+                ReadToken();
+
+                // direct_abstract_declarator
+                if (direct_abstract_declarator())
+                    return true;
+
+                else
+                {
+                    UnreadToken();
+
+                    return true;
+                }
+            }
+
+            // direct_abstract_declarator
+            else if (direct_abstract_declarator())
+                return true;
+
+            return false;
         }
 
+        // direct_abstract_declarator
+        // : ParenthesisOpen ParenthesisClose
+        // | ParenthesisOpen abstract_declarator ParenthesisClose
+        // | ParenthesisOpen parameter_type_list ParenthesisClose
+        // | BracketOpen BracketClose
+        // | BracketOpen constant_expression BracketClose
+        // | direct_abstract_declarator BracketOpen BracketClose
+        // | direct_abstract_declarator BracketOpen constant_expression BracketClose
+        // | direct_abstract_declarator ParenthesisOpen ParenthesisClose
+        // | direct_abstract_declarator ParenthesisOpen parameter_type_list ParenthesisClose
+        bool direct_abstract_declarator()
+        {
+            // ParenthesisOpen ParenthesisClose
+            // | ParenthesisOpen abstract_declarator ParenthesisClose
+            // | ParenthesisOpen parameter_type_list ParenthesisClose
+            if (IsToken(Token.ParenthesisOpen))
+            {
+                ReadToken();
+
+                if (parameter_type_list())
+                {
+                    ReadToken();
+
+                    if (IsToken(Token.ParenthesisClose))
+                        return true;
+
+                    UnreadToken();
+                }
+                else if (abstract_declarator())
+                {
+                    ReadToken();
+
+                    if (IsToken(Token.ParenthesisClose))
+                        return true;
+
+                    UnreadToken();
+                }
+                else if (IsToken(Token.ParenthesisClose))
+                    return true;
+
+                UnreadToken();
+            }
+
+            // BracketOpen BracketClose
+            // | BracketOpen constant_expression BracketClose
+            else if (IsToken(Token.BracketOpen))
+            {
+                ReadToken();
+
+                if (logical_or_expression())
+                {
+                    ReadToken();
+
+                    if (IsToken(Token.BracketClose))
+                        return true;
+
+                    UnreadToken();
+                }
+
+
+                else if (IsToken(Token.BracketClose))
+                    return true;
+
+                UnreadToken();
+            }
+
+            // direct_abstract_declarator BracketOpen BracketClose
+            // | direct_abstract_declarator BracketOpen constant_expression BracketClose
+            // | direct_abstract_declarator ParenthesisOpen ParenthesisClose
+            // | direct_abstract_declarator ParenthesisOpen parameter_type_list ParenthesisClose
+
+            else if (direct_abstract_declarator())
+            {
+                ReadToken();
+
+                // BracketOpen BracketClose
+                // | BracketOpen constant_expression BracketClose
+                if (IsToken(Token.BracketOpen))
+                {
+                    ReadToken();
+
+                    if (logical_or_expression())
+                    {
+                        ReadToken();
+
+                        if (IsToken(Token.BracketClose))
+                            return true;
+
+                        UnreadToken();
+                    }
+
+                    else if (IsToken(Token.BracketClose))
+                        return true;
+
+                    UnreadToken();
+                }
+
+                // ParenthesisOpen ParenthesisClose
+                // | ParenthesisOpen parameter_type_list ParenthesisClose
+
+                else if (IsToken(Token.ParenthesisOpen))
+                {
+                    ReadToken();
+
+                    if (parameter_type_list())
+                    {
+                        ReadToken();
+
+                        if (IsToken(Token.ParenthesisClose))
+                            return true;
+
+                        UnreadToken();
+                    }
+
+                    else if (IsToken(Token.ParenthesisClose))
+                        return true;
+
+                    UnreadToken();
+                }
+
+
+                UnreadToken();
+            }
+
+            return false;
+        }
+
+
+        // identifier_list
+        // : Identifier
+        // | identifier_list comma Identifier
+        bool identifier_list()
+        {
+            // Identifier
+            if (IsToken(Token.Identifier))
+                return true;
+
+            // identifier_list comma Identifier
+            if (identifier_list())
+            {
+                ReadToken();
+
+                // comma Identifier
+                if (IsToken(Token.Comma))
+                {
+                    ReadToken();
+
+                    // Identifier
+                    if (IsToken(Token.Identifier))
+                        return true;
+
+                    UnreadToken();
+                }
+
+                UnreadToken();
+            }
+
+            return false;
+        }
+
+        // compound_statement
+        // : BraceOpen BraceClose
+        // | BraceOpen statement_list BraceClose
+        // | BraceOpen declaration_list BraceClose
+        // | BraceOpen declaration_list statement_list BraceClose
+        bool compound_statement()
+        {
+            //  BraceOpen BraceClose
+            // | BraceOpen statement_list BraceClose
+            // | BraceOpen declaration_list BraceClose
+            // | BraceOpen declaration_list statement_list BraceClose
+            if (IsToken(Token.BraceOpen))
+            {
+                ReadToken();
+
+                // BraceClose
+                if (IsToken(Token.BraceClose))
+                    return true;
+
+                // declaration_list BraceClose
+                // | declaration_list statement_list BraceClose
+                else if (declaration_list())
+                {
+                    ReadToken();
+
+                    // BraceClose
+                    if (IsToken(Token.BraceClose))
+                        return true;
+
+                    // statement_list BraceClose
+                    else if (statement_list())
+                    {
+                        ReadToken();
+
+                        // BraceClose
+                        if (IsToken(Token.BraceClose))
+                            return true;
+
+                        UnreadToken();
+                    }
+
+                    UnreadToken();
+                }
+
+                // statement_list BraceClose
+                else if (statement_list())
+                {
+                    ReadToken();
+
+                    // BraceClose
+                    if (IsToken(Token.BraceClose))
+                        return true;
+
+                    UnreadToken();
+                }
+
+                UnreadToken();
+            }
+
+            return false;
+        }
+
+        // declaration_list
+        // : declaration
+        // | declaration_list declaration
+        bool declaration_list()
+        {
+            // declaration
+            if (declaration())
+                return true;
+
+            // declaration_list declaration
+            else if (declaration_list())
+            {
+                ReadToken();
+
+                // declaration
+                if (declaration())
+                    return true;
+
+                UnreadToken();
+            }
+            return false;
+        }
+
+        // declaration
+        // : declaration_specifiers SemiCollon
+        // | declaration_specifiers init_declarator_list SemiCollon
+        bool declaration()
+        {
+            // declaration_specifiers SemiCollon
+            // | declaration_specifiers init_declarator_list SemiCollon
+            if (declaration_specifiers())
+            {
+                ReadToken();
+
+                // SemiCollon
+                if (IsToken(Token.SemiCollon))
+                    return true;
+
+                // init_declarator_list SemiCollon
+                else if (init_declarator_list())
+                {
+                    ReadToken();
+
+                    // SemiCollon
+                    if (IsToken(Token.SemiCollon))
+                        return true;
+
+                    UnreadToken();
+                }
+
+                UnreadToken();
+            }
+
+            return false;
+        }
+
+        // init_declarator_list
+        // : init_declarator
+        // | init_declarator_list Comma init_declarator
+        bool init_declarator_list()
+        {
+            // init_declarator
+            if (init_declarator())
+                return true;
+
+            // init_declarator_list Comma init_declarator
+            else if (init_declarator_list())
+            {
+                ReadToken();
+
+                // Comma init_declarator
+                if (IsToken(Token.Comma))
+                {
+                    ReadToken();
+
+                    // init_declarator
+                    if (init_declarator())
+                        return true;
+
+                    UnreadToken();
+                }
+
+                UnreadToken();
+            }
+
+            return false;
+        }
+
+        // init_declarator
+        // : declarator
+        // | declarator Assign initializer
+        bool init_declarator()
+        {
+            if (declarator())
+            {
+                ReadToken();
+
+                if (IsToken(Token.Assign))
+                {
+                    ReadToken();
+
+                    if (initializer())
+                        return true;
+
+                    UnreadToken();
+                }
+                else
+                {
+                    UnreadToken();
+                    return true;
+                }
+
+                UnreadToken();
+            }
+
+            return false;
+        }
+
+        // intitializer
+        // : assignment_expression
+        // | BraceOpen initializer_list BraceClose
+        // | BraceOpen initializer_list Comma BraceClose
+        bool initializer()
+        {
+            // assignment_expression
+            if (assignment_expression())
+                return true;
+
+            // BraceOpen initializer_list BraceClose
+            // | BraceOpen initializer_list Comma BraceClose
+            else if (IsToken(Token.BraceOpen))
+            {
+                ReadToken();
+
+                //initializer_list BraceClose
+                // | initializer_list Comma BraceClose
+                if (initializer_list())
+                {
+                    ReadToken();
+
+                    // BraceClose
+                    if (IsToken(Token.BraceClose))
+                        return true;
+
+                    // Comma BraceClose
+                    else if (IsToken(Token.Comma))
+                    {
+                        ReadToken();
+
+                        // BraceClose
+                        if (IsToken(Token.BraceClose))
+                            return true;
+
+                        UnreadToken();
+                    }
+
+                    UnreadToken();
+                }
+
+                UnreadToken();
+            }
+
+            return false;
+        }
+
+        //initializer_list
+        // : initializer
+        // | initializer_list Comma initializer
+        bool initializer_list()
+        {
+            // initializer
+            if (initializer())
+                return true;
+
+            // initializer_list Comma initializer
+            else if (initializer_list())
+            {
+                ReadToken();
+
+                // Comma initializer
+                if (IsToken(Token.Comma))
+                {
+                    ReadToken();
+
+                    // initializer
+                    if (initializer())
+                        return true;
+
+                    UnreadToken();
+                }
+
+                UnreadToken();
+            }
+
+            return false;
+        }
+
+        // statement_list
+        // : statement
+        // | statement_list statement
+        bool statement_list()
+        {
+            if (statement())
+                return true;
+
+            else if (statement_list())
+            {
+                ReadToken();
+
+                if (statement())
+                    return true;
+
+                UnreadToken();
+            }
+
+            return false;
+        }
+
+        // statement
+        // : labeled_statement
+        // | compound_statement
+        // | expression_statement
+        // | selection_statement
+        // | iteration_statement
+        // | jump_statement
+        bool statement()
+        {
+            if (labeled_statement()
+               || compound_statement()
+               || expression_statement()
+               || selection_statement()
+               || iteration_statement()
+               || jump_statement())
+                return true;
+
+            return false;
+        }
+
+        // labeled_statement
+        // : Case constant_expression Collon statement
+        // | Default Collon statement
+        bool labeled_statement()
+        {
+            // Case constant_expression Collon statement
+            if (IsToken(Token.Case))
+            {
+                ReadToken();
+
+                // constant_expression Collon statement
+                if (logical_or_expression())
+                {
+                    ReadToken();
+
+                    // Collon statement
+                    if (IsToken(Token.Collon))
+                    {
+                        ReadToken();
+
+                        // statement
+                        if (statement())
+                            return true;
+
+                        UnreadToken();
+                    }
+
+                    UnreadToken();
+                }
+
+                UnreadToken();
+            }
+
+            // Default Collon statement
+            else if (IsToken(Token.Default))
+            {
+                ReadToken();
+
+                // Collon statement
+                if (IsToken(Token.Collon))
+                {
+                    ReadToken();
+
+                    // statement
+                    if (statement())
+                        return true;
+
+                    UnreadToken();
+                }
+
+                UnreadToken();
+            }
+
+            return false;
+        }
+
+        // expression_statement
+        // : SemiCollon
+        // | expression SemiCollon
+        bool expression_statement()
+        {
+            // SemiCollon
+            if (IsToken(Token.SemiCollon))
+                return true;
+
+            // expression SemiCollon
+            else if (expression())
+            {
+                ReadToken();
+
+                // SemiCollon
+                if (IsToken(Token.SemiCollon))
+                    return true;
+
+                UnreadToken();
+            }
+
+            return false;
+        }
+
+        // selection_statement
+        // : If ParenthesisOpen expression ParenthesisClose statement
+        // | If ParenthesisOpen expression ParenthesisClose statement Else statement
+        // | Switch ParenthesisOpen expression ParenthesisClose statement
+        bool selection_statement()
+        {
+            if (IsToken(Token.If))
+            {
+                ReadToken();
+
+                if (expression_statement_structure())
+                {
+                    ReadToken();
+
+                    if (IsToken(Token.Else))
+                    {
+                        ReadToken();
+
+                        if (statement())
+                            return true;
+
+                        UnreadToken();
+                    }
+                    else
+                    {
+                        UnreadToken();
+
+                        return true;
+                    }
+
+                    UnreadToken();
+                }
+
+                UnreadToken();
+            }
+
+            return false;
+        }
+
+        // expression_statement_structure
+        // : ParenthesisOpen expression ParenthesisClose statement
+        bool expression_statement_structure()
+        {
+            // ParenthesisOpen expression ParenthesisClose statement
+            if (IsToken(Token.ParenthesisOpen))
+            {
+                ReadToken();
+
+                // expression ParenthesisClose statement
+                if (expression())
+                {
+                    ReadToken();
+
+                    // ParenthesisClose statement
+                    if (IsToken(Token.ParenthesisClose))
+                    {
+                        ReadToken();
+
+                        // statement
+                        if (statement())
+                            return true;
+
+                        UnreadToken();
+                    }
+
+                    UnreadToken();
+                }
+
+                UnreadToken();
+            }
+
+            return false;
+        }
+
+        //iteration_statement
+        // : While expression_statement_structure
+        // | Do statement While ParenthesisOpen expression ParenthesisClose SemiCollon
+        // | For ParenthesisOpen expression_statement expression_statement ParenthesisClose statement
+        // | For ParenthesisOpen expression_statement expression_statement expression ParenthesisClose statement
+        bool iteration_statement()
+        {
+            if (IsToken(Token.While))
+            {
+                ReadToken();
+
+                if (expression_statement_structure())
+                    return true;
+
+                UnreadToken();
+            }
+
+            // Do statement While ParenthesisOpen expression ParenthesisClose SemiCollon
+            else if (IsToken(Token.Do))
+            {
+                ReadToken();
+
+                // statement While ParenthesisOpen expression ParenthesisClose SemiCollon
+                if (statement())
+                {
+                    ReadToken();
+
+                    // While ParenthesisOpen expression ParenthesisClose SemiCollon
+                    if (IsToken(Token.While))
+                    {
+                        ReadToken();
+
+                        // ParenthesisOpen expression ParenthesisClose SemiCollon
+                        if (IsToken(Token.ParenthesisOpen))
+                        {
+                            ReadToken();
+
+                            // expression ParenthesisClose SemiCollon
+                            if (expression())
+                            {
+                                ReadToken();
+
+                                // ParenthesisClose SemiCollon
+                                if (IsToken(Token.ParenthesisClose))
+                                {
+                                    ReadToken();
+
+                                    // SemiCollon
+                                    if (IsToken(Token.SemiCollon))
+                                        return true;
+
+                                    UnreadToken();
+                                }
+                                UnreadToken();
+                            }
+
+                            UnreadToken();
+                        }
+                        UnreadToken();
+                    }
+
+                    UnreadToken();
+                }
+
+                UnreadToken();
+            }
+
+            // For ParenthesisOpen expression_statement expression_statement ParenthesisClose statement
+            // | For ParenthesisOpen expression_statement expression_statement expression ParenthesisClose statement
+            else if (IsToken(Token.For))
+            {
+                ReadToken();
+
+                // ParenthesisOpen expression_statement expression_statement ParenthesisClose statement
+                // | ParenthesisOpen expression_statement expression_statement expression ParenthesisClose statement
+                if (IsToken(Token.ParenthesisOpen))
+                {
+                    ReadToken();
+
+                    // expression_statement expression_statement ParenthesisClose statement
+                    // | expression_statement expression_statement expression ParenthesisClose statement
+                    if (expression_statement())
+                    {
+                        ReadToken();
+
+                        // expression_statement ParenthesisClose statement
+                        // | expression_statement expression ParenthesisClose statement
+                        if (expression_statement())
+                        {
+                            ReadToken();
+
+                            // expression ParenthesisClose statement
+                            if (expression())
+                            {
+                                ReadToken();
+
+                                // ParenthesisClose statement
+                                if (IsToken(Token.ParenthesisClose))
+                                {
+                                    ReadToken();
+
+                                    // statement
+                                    if (statement())
+                                        return true;
+
+                                    UnreadToken();
+                                }
+
+                                UnreadToken();
+                            }
+                            // ParenthesisClose statement
+                            else if (IsToken(Token.ParenthesisClose))
+                            {
+                                ReadToken();
+
+                                // statement
+                                if (statement())
+                                    return true;
+
+                                UnreadToken();
+                            }
+
+                            UnreadToken();
+                        }
+
+                        UnreadToken();
+                    }
+
+                    UnreadToken();
+                }
+
+                UnreadToken();
+            }
+
+            return false;
+        }
+
+        // jump_statement
+        // : Continue SemiCollon
+        // | Break SemiCollon
+        // | Return SemiCollon
+        // | Return expression SemiCollon
+        bool jump_statement()
+        {
+            // Continue SemiCollon
+            if (IsToken(Token.Continue))
+            {
+                ReadToken();
+
+                if (IsToken(Token.SemiCollon))
+                    return true;
+
+                UnreadToken();
+            }
+            // Break SemiCollon
+            else if (IsToken(Token.Break))
+            {
+                ReadToken();
+
+                if (IsToken(Token.SemiCollon))
+                    return true;
+
+                UnreadToken();
+            }
+            // Return SemiCollon
+            // | Return expression SemiCollon
+            else if (IsToken(Token.Return))
+            {
+                ReadToken();
+
+                // SemiCollon
+                if (IsToken(Token.SemiCollon))
+                    return true;
+
+                // expression SemiCollon
+                else if (expression())
+                {
+                    ReadToken();
+
+                    // SemiCollon
+                    if (IsToken(Token.SemiCollon))
+                        return true;
+
+                    UnreadToken();
+                }
+
+                UnreadToken();
+            }
+
+            return false;
+        }
     }
 }
 

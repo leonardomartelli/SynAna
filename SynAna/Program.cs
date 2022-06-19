@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
 using System.IO;
+using SynAna;
 using SynAna.LexAna;
 
 var fileName = Debugger.IsAttached ? "testfile.c" : AskUserFileName();
@@ -14,7 +15,11 @@ if (!Directory.Exists(folderName))
 
 var lexicalAnalyser = new Lexical(input, folderName);
 
-lexicalAnalyser.Analyse();
+var lexicalResult = lexicalAnalyser.Analyze();
+
+var syntacticAnalyser = new Syntactic(lexicalResult);
+
+syntacticAnalyser.Analyze();
 
 Console.ReadKey();
 

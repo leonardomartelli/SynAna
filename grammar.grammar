@@ -235,7 +235,7 @@ parameter_declaration
 
 identifier_list
 	: Identifier
-	| identifier_list comma Identifier
+	| identifier_list Comma Identifier
 	;
 
 type_name
@@ -310,13 +310,17 @@ expression_statement
 	;
 
 selection_statement
-	: If ParenthesisOpen expression ParenthesisClose statement
-	| If ParenthesisOpen expression ParenthesisClose statement Else statement
-	| Switch ParenthesisOpen expression ParenthesisClose statement
+	: If expression_statement_structure
+	| If expression_statement_structure Else statement
+	| Switch expression_statement_structure
 	;
 
+expression_statement_structure
+    : ParenthesisOpen expression ParenthesisClose statement
+    ;
+
 iteration_statement
-	: While ParenthesisOpen expression ParenthesisClose statement
+	: While expression_statement_structure
 	| Do statement While ParenthesisOpen expression ParenthesisClose SemiCollon
 	| For ParenthesisOpen expression_statement expression_statement ParenthesisClose statement
 	| For ParenthesisOpen expression_statement expression_statement expression ParenthesisClose statement

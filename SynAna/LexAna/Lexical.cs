@@ -12,6 +12,7 @@ namespace SynAna.LexAna
                 { "int", Token.Int },
                 { "float", Token.Float },
                 { "double", Token.Double },
+                { "char", Token.Char },
                 { "void", Token.Void },
                 { "return", Token.Return },
                 { "continue", Token.Continue },
@@ -19,6 +20,8 @@ namespace SynAna.LexAna
                 { "if", Token.If },
                 { "else", Token.Else },
                 { "for", Token.For },
+                { "while", Token.While },
+                { "do", Token.Do },
                 { "struct", Token.Struct },
                 { "unsigned", Token.Unsigned },
                 { "long", Token.Long }
@@ -58,7 +61,7 @@ namespace SynAna.LexAna
             _lexicalResult = new List<TokenResult>();
         }
 
-        public IEnumerable<TokenResult> Analyse()
+        public IEnumerable<TokenResult> Analyze()
         {
             ReadChar();
 
