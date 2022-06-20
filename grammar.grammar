@@ -7,7 +7,7 @@ primary_expression
 
 // for arrays, pointers n structs
 postfix_expression
-    : primary_expression
+    : primary_expression postfix_expression_line
     | postfix_expression BracketOpen expression BracketClose
     | postfix_expression ParenthisOpen ParenthisClose
     | postfix_expression ParenthisOpen argument_expression_list ParenthisClose
@@ -17,10 +17,24 @@ postfix_expression
     | postfix_expression Decrement
     ;
 
+postfix_expression_line
+    : BracketOpen expression BracketClose postfix_expression_line
+    | ParenthisOpen ParenthisClose postfix_expression_line
+    | ParenthisOpen argument_expression_list ParenthisClose postfix_expression_line
+    | Dot Identifier postfix_expression_line
+    | StructAccessor Identifier postfix_expression_line
+    | Increment postfix_expression_line
+    | Decrement postfix_expression_line
+    ;
+
 // passing params
 argument_expression_list
-    : assignment_expression
-    | argument_expression_list Comma assignment_expression
+    : assignment_expression argument_expression_list_line
+    ;
+
+argument_expression_list_line
+    : Comma assignment_expression argument_expression_list_line
+    | empty
     ;
 
 unary_expression

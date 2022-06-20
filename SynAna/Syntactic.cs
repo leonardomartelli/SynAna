@@ -481,7 +481,7 @@ namespace SynAna
             // | direct_declarator ParenthisOpen parameter_type_list ParenthisClose
             // | direct_declarator ParenthisOpen identifier_list ParenthisClose
             // | direct_declarator ParenthisOpen ParenthisClose
-            else if (direct_declarator())
+            if (direct_declarator())
             {
                 ReadToken();
 
@@ -1561,6 +1561,7 @@ namespace SynAna
         // identifier_list
         // : Identifier
         // | identifier_list comma Identifier
+
         bool identifier_list()
         {
             // Identifier
@@ -1653,40 +1654,26 @@ namespace SynAna
         }
 
         // declaration_list
-        // : declaration declaration_list_line
+        // : declaration
+        // | declaration_list declaration
         bool declaration_list()
         {
             // declaration
             if (declaration())
+                return true;
+
+            // declaration_list declaration
+            else if (declaration_list())
             {
                 ReadToken();
 
-                // declaration_list_line
-                if (declaration_list_line())
-                        return true;
-
-                UnreadToken();
-            }
-            return false;
-        }
-
-        // declaration_list
-        // : declaration
-        // | declaration_list declaration
-        bool declaration_list_line()
-        {
-            // declaration
-            if (declaration())
-            {
-                ReadToken();
-
-                // declaration_list_line
-                if (declaration_list_line())
+                // declaration
+                if (declaration())
                     return true;
 
                 UnreadToken();
             }
-            return true;
+            return false;
         }
 
         // declaration
