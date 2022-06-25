@@ -39,14 +39,6 @@ namespace SynAna
                 _currentTokenResult = default;
         }
 
-        void UnreadToken()
-        {
-            if (_position > 0)
-                _currentTokenResult = _lexicalResult.ElementAt(--_position);
-            else
-                _currentTokenResult = default;
-        }
-
         bool IsToken(Token token) =>
             _currentTokenResult?.Token == token;
 
@@ -71,61 +63,60 @@ namespace SynAna
         //   | declarator compound_statement
         bool function_definition()
         {
-
             //   declaration_specifiers declarator declaration_list compound_statement
             // | declaration_specifiers declarator compound_statement
             if (declaration_specifiers())
             {
-                ReadToken();
+                
 
                 //   declarator declaration_list compound_statement
                 // | declarator compound_statement
                 if (declarator())
                 {
-                    ReadToken();
+                    
 
                     //declaration_list compound_statement
                     if (declaration_list())
                     {
-                        ReadToken();
+                        
 
                         // compound_statement
                         if (compound_statement())
                             return true;
 
-                        UnreadToken();
+
                     }
                     // compound_statement
                     else if (compound_statement())
                         return true;
 
-                    UnreadToken();
+
                 }
 
-                UnreadToken();
+
             }
             //   declarator declaration_list compound_statement
             // | declarator compound_statement
             else if (declarator())
             {
-                ReadToken();
+                
 
                 // declaration_list compound_statement
                 if (declaration_list())
                 {
-                    ReadToken();
+                    
                     // compound_statement
                     if (compound_statement())
                         return true;
 
-                    UnreadToken();
+
                 }
 
                 // compound_statement
                 else if (compound_statement())
                     return true;
 
-                UnreadToken();
+
             }
 
             return false;
@@ -140,14 +131,12 @@ namespace SynAna
             // | type_specifier declaration_specifiers
             if (type_specifier())
             {
-                ReadToken();
-
                 // declaration_specifiers
                 if (declaration_specifiers())
                     return true;
                 else
                 {
-                    UnreadToken();
+
 
                     return true;
                 }
@@ -165,7 +154,10 @@ namespace SynAna
         {
             // Void
             if (IsToken(Token.Void))
+            {
+                ReadToken();
                 return true;
+            }
             // primitive_type_specifier
             else if (primitive_type_specifier())
                 return true;
@@ -195,9 +187,15 @@ namespace SynAna
                 // Float
                 || IsToken(Token.Float)
                 // Double
-                || IsToken(Token.Double)
-                // long_int_specifier
-                || long_int_specifier())
+                || IsToken(Token.Double))
+            {
+                ReadToken();
+
+                return true;
+            }
+
+            // long_int_specifier
+            else if (long_int_specifier())
                 return true;
 
             return false;
@@ -219,9 +217,12 @@ namespace SynAna
                     return true;
                 // Int
                 else if (IsToken(Token.Int))
+                {
+                    ReadToken();
                     return true;
+                }
 
-                UnreadToken();
+
             }
 
             return false;
@@ -240,7 +241,7 @@ namespace SynAna
                 if (primitive_type_specifier())
                     return true;
 
-                UnreadToken();
+
             }
 
             return false;
@@ -271,26 +272,29 @@ namespace SynAna
                         // struct_declaration_list BraceClose
                         if (struct_declaration_list())
                         {
-                            ReadToken();
+                            
 
                             // BraceClose
                             if (IsToken(Token.BraceClose))
+                            {
+                                ReadToken();
                                 return true;
+                            }
 
-                            UnreadToken();
+
                         }
 
-                        UnreadToken();
+
                     }
                     else
                     {
 
-                        UnreadToken();
+
 
                         return true;
                     }
 
-                    UnreadToken();
+
                 }
                 else if (IsToken(Token.BraceOpen))
                 {
@@ -298,19 +302,19 @@ namespace SynAna
                     // struct_declaration_list BraceClose
                     if (struct_declaration_list())
                     {
-                        ReadToken();
+                        
 
                         // BraceClose
                         if (IsToken(Token.BraceClose))
                             return true;
 
-                        UnreadToken();
+
                     }
 
-                    UnreadToken();
+
                 }
 
-                UnreadToken();
+
             }
 
             return false;
@@ -328,13 +332,13 @@ namespace SynAna
             // struct_declaration_list struct_declaration
             else if (struct_declaration_list())
             {
-                ReadToken();
+                
 
                 // struct_declaration
                 if (struct_declaration())
                     return true;
 
-                UnreadToken();
+
             }
 
             return false;
@@ -347,21 +351,23 @@ namespace SynAna
             // pecifier_list struct_declarator_list SemiCollon
             if (specifier_list())
             {
-                ReadToken();
+                
 
                 // struct_declarator_list SemiCollon
                 if (struct_declaration_list())
                 {
-                    ReadToken();
 
                     // SemiCollon
                     if (IsToken(Token.SemiCollon))
+                    {
+                        ReadToken();
                         return true;
+                    }
 
-                    UnreadToken();
+
                 }
 
-                UnreadToken();
+
             }
 
             return false;
@@ -376,14 +382,14 @@ namespace SynAna
             // | type_specifier
             if (type_specifier())
             {
-                ReadToken();
+                
 
                 // specifier_list
                 if (specifier_list())
                     return true;
                 else
                 {
-                    UnreadToken();
+
 
                     return true;
                 }
@@ -402,13 +408,13 @@ namespace SynAna
             // pointer direct_declarator
             if (pointer())
             {
-                ReadToken();
+                
 
                 // direct_declarator
                 if (direct_declarator())
                     return true;
 
-                UnreadToken();
+
             }
             // direct_declarator
             else if (direct_declarator())
@@ -434,7 +440,7 @@ namespace SynAna
 
                 else
                 {
-                    UnreadToken();
+
 
                     return true;
                 }
@@ -455,7 +461,10 @@ namespace SynAna
         {
             // Identifier
             if (IsToken(Token.Identifier))
+            {
+                ReadToken();
                 return true;
+            }
 
             // ParenthisOpen declarator ParenthisClose
             else if (IsToken(Token.ParenthesisOpen))
@@ -465,15 +474,17 @@ namespace SynAna
                 // declarator ParenthisClose
                 if (declarator())
                 {
-                    ReadToken();
 
                     // ParenthisClose
                     if (IsToken(Token.ParenthesisClose))
+                    {
+                        ReadToken();
                         return true;
+                    }
 
-                    UnreadToken();
+
                 }
-                UnreadToken();
+
             }
 
             // direct_declarator BracketOpen constant_expression BracketClose
@@ -483,7 +494,7 @@ namespace SynAna
             // | direct_declarator ParenthisOpen ParenthisClose
             if (direct_declarator())
             {
-                ReadToken();
+                
 
                 // BracketOpen constant_expression BracketClose
                 // | BracketOpen BracketClose
@@ -494,20 +505,26 @@ namespace SynAna
                     // constant_expression BracketClose
                     if (logical_or_expression())
                     {
-                        ReadToken();
+                        
 
                         // BracketClose
                         if (IsToken(Token.BracketClose))
+                        {
+                            ReadToken();
                             return true;
+                        }
 
-                        UnreadToken();
+
                     }
 
                     // BracketClose
                     else if (IsToken(Token.BracketClose))
+                    {
+                        ReadToken();
                         return true;
+                    }
 
-                    UnreadToken();
+
                 }
 
                 // ParenthisOpen parameter_type_list ParenthisClose
@@ -520,35 +537,44 @@ namespace SynAna
                     // parameter_type_list ParenthisClose
                     if (parameter_type_list())
                     {
-                        ReadToken();
+                        
 
                         // ParenthisClose
                         if (IsToken(Token.ParenthesisClose))
+                        {
+                            ReadToken();
                             return true;
+                        }
 
-                        UnreadToken();
+
                     }
 
                     // identifier_list ParenthisClose
                     else if (identifier_list())
                     {
-                        ReadToken();
+                        
 
                         // ParenthisClose
                         if (IsToken(Token.ParenthesisClose))
+                        {
+                            ReadToken();
                             return true;
+                        }
 
-                        UnreadToken();
+
                     }
 
                     // ParenthisClose
                     else if (IsToken(Token.ParenthesisClose))
+                    {
+                        ReadToken();
                         return true;
+                    }
 
-                    UnreadToken();
+
                 }
 
-                UnreadToken();
+
             }
 
             return false;
@@ -566,7 +592,7 @@ namespace SynAna
             // logical_or_expression LogicalOr logical_and_expression
             else if (logical_or_expression())
             {
-                ReadToken();
+                
 
                 // LogicalOr logical_and_expression
                 if (IsToken(Token.LogicalOr))
@@ -577,10 +603,10 @@ namespace SynAna
                     if (logical_and_expression())
                         return true;
 
-                    UnreadToken();
+
                 }
 
-                UnreadToken();
+
             }
 
             return false;
@@ -598,7 +624,7 @@ namespace SynAna
             // logical_and_expression LogicalAnd inclusive_or_expression
             else if (logical_and_expression())
             {
-                ReadToken();
+                
 
                 // LogicalAnd inclusive_or_expression
                 if (IsToken(Token.LogicalAnd))
@@ -609,10 +635,10 @@ namespace SynAna
                     if (inclusive_or_expression())
                         return true;
 
-                    UnreadToken();
+
                 }
 
-                UnreadToken();
+
             }
 
             return false;
@@ -630,7 +656,7 @@ namespace SynAna
             // inclusive_or_expression Or exclusive_or_expression
             else if (inclusive_or_expression())
             {
-                ReadToken();
+                
 
                 // Or exclusive_or_expression
                 if (IsToken(Token.Or))
@@ -641,10 +667,10 @@ namespace SynAna
                     if (exclusive_or_expression())
                         return true;
 
-                    UnreadToken();
+
                 }
 
-                UnreadToken();
+
             }
 
             return false;
@@ -662,7 +688,7 @@ namespace SynAna
             // exclusive_or_expression Xor and_expression
             else if (exclusive_or_expression())
             {
-                ReadToken();
+                
 
                 // Xor and_expression
                 if (IsToken(Token.Xor))
@@ -673,10 +699,10 @@ namespace SynAna
                     if (and_expression())
                         return true;
 
-                    UnreadToken();
+
                 }
 
-                UnreadToken();
+
             }
 
             return false;
@@ -694,7 +720,7 @@ namespace SynAna
             // and_expression And equality_expression
             else if (and_expression())
             {
-                ReadToken();
+                
 
                 //And equality_expression
                 if (IsToken(Token.And))
@@ -705,10 +731,10 @@ namespace SynAna
                     if (equality_expression())
                         return true;
 
-                    UnreadToken();
+
                 }
 
-                UnreadToken();
+
             }
 
             return false;
@@ -729,7 +755,7 @@ namespace SynAna
             // | equality_expression NotEquals relational_expression
             else if (equality_expression())
             {
-                ReadToken();
+                
 
                 // Equals relational_expression
                 if (IsToken(Token.Equals))
@@ -740,7 +766,7 @@ namespace SynAna
                     if (relational_expression())
                         return true;
 
-                    UnreadToken();
+
                 }
 
                 // NotEquals relational_expression
@@ -752,10 +778,10 @@ namespace SynAna
                     if (relational_expression())
                         return true;
 
-                    UnreadToken();
+
                 }
 
-                UnreadToken();
+
             }
 
             return false;
@@ -779,7 +805,7 @@ namespace SynAna
             // | relational_expression GreaterOrEqual shift_expression
             if (relational_expression())
             {
-                ReadToken();
+                
 
                 // Less shift_expression
                 if (IsToken(Token.Less))
@@ -790,7 +816,7 @@ namespace SynAna
                     if (shift_expression())
                         return true;
 
-                    UnreadToken();
+
                 }
 
                 // Greater shift_expression
@@ -802,7 +828,7 @@ namespace SynAna
                     if (shift_expression())
                         return true;
 
-                    UnreadToken();
+
                 }
 
                 // LessOrEqual shift_expression
@@ -814,7 +840,7 @@ namespace SynAna
                     if (shift_expression())
                         return true;
 
-                    UnreadToken();
+
                 }
 
                 // GreaterOrEqual shift_expression
@@ -826,10 +852,10 @@ namespace SynAna
                     if (shift_expression())
                         return true;
 
-                    UnreadToken();
+
                 }
 
-                UnreadToken();
+
             }
 
             return false;
@@ -849,7 +875,7 @@ namespace SynAna
             // | shift_expression ShiftRight additive_expression
             if (shift_expression())
             {
-                ReadToken();
+                
 
                 // ShiftLeft additive_expression
                 if (IsToken(Token.ShiftLeft))
@@ -860,11 +886,11 @@ namespace SynAna
                     if (additive_expression())
                         return true;
 
-                    UnreadToken();
+
                 }
 
                 // ShiftRight additive_expression
-                else if (IsToken(Token.ShiftLeft))
+                else if (IsToken(Token.ShiftRight))
                 {
                     ReadToken();
 
@@ -872,10 +898,10 @@ namespace SynAna
                     if (additive_expression())
                         return true;
 
-                    UnreadToken();
+
                 }
 
-                UnreadToken();
+
             }
 
             return false;
@@ -895,7 +921,7 @@ namespace SynAna
             // | additive_expression Minus multiplicative_expression
             if (additive_expression())
             {
-                ReadToken();
+                
 
                 // Plus multiplicative_expression
                 if (IsToken(Token.Plus))
@@ -906,7 +932,7 @@ namespace SynAna
                     if (multiplicative_expression())
                         return true;
 
-                    UnreadToken();
+
                 }
 
                 // Minus multiplicative_expression
@@ -918,10 +944,10 @@ namespace SynAna
                     if (multiplicative_expression())
                         return true;
 
-                    UnreadToken();
+
                 }
 
-                UnreadToken();
+
             }
 
             return false;
@@ -943,7 +969,7 @@ namespace SynAna
             // | multiplicative_expression Module unary_expression
             if (multiplicative_expression())
             {
-                ReadToken();
+                
 
                 // Product unary_expression
                 if (IsToken(Token.Product))
@@ -954,7 +980,7 @@ namespace SynAna
                     if (unary_expression())
                         return true;
 
-                    UnreadToken();
+
                 }
 
                 // Division unary_expression
@@ -966,7 +992,7 @@ namespace SynAna
                     if (unary_expression())
                         return true;
 
-                    UnreadToken();
+
                 }
 
                 // Module unary_expression
@@ -978,10 +1004,10 @@ namespace SynAna
                     if (unary_expression())
                         return true;
 
-                    UnreadToken();
+
                 }
 
-                UnreadToken();
+
             }
 
             return false;
@@ -1006,7 +1032,7 @@ namespace SynAna
                 if (unary_expression())
                     return true;
 
-                UnreadToken();
+
             }
 
             // Decrement unary_expression
@@ -1017,18 +1043,18 @@ namespace SynAna
                 if (unary_expression())
                     return true;
 
-                UnreadToken();
+
             }
 
             // unary_operator unary_expression
             if (unary_operator())
             {
-                ReadToken();
+                
 
                 if (unary_expression())
                     return true;
 
-                UnreadToken();
+
             }
 
             return false;
@@ -1058,7 +1084,7 @@ namespace SynAna
             // | postfix_expression Decrement
             if (postfix_expression())
             {
-                ReadToken();
+                
 
                 // ParenthisOpen argument_expression_list ParenthisClose
                 // | ParenthisOpen ParenthisClose
@@ -1069,20 +1095,26 @@ namespace SynAna
                     // argument_expression_list ParenthisClose
                     if (argument_expression_list())
                     {
-                        ReadToken();
+                        
 
                         // ParenthisClose
                         if (IsToken(Token.ParenthesisClose))
+                        {
+                            ReadToken();
                             return true;
+                        }
 
-                        UnreadToken();
+
                     }
 
                     // ParenthisClose
                     else if (IsToken(Token.ParenthesisClose))
+                    {
+                        ReadToken();
                         return true;
+                    }
 
-                    UnreadToken();
+
                 }
 
                 // Dot Identifier
@@ -1092,9 +1124,12 @@ namespace SynAna
 
                     // Identifier
                     if (IsToken(Token.Identifier))
+                    {
+                        ReadToken();
                         return true;
+                    }
 
-                    UnreadToken();
+
                 }
 
                 // StructAccessor Identifier
@@ -1104,20 +1139,29 @@ namespace SynAna
 
                     // Identifier
                     if (IsToken(Token.Identifier))
+                    {
+                        ReadToken();
                         return true;
+                    }
 
-                    UnreadToken();
+
                 }
 
                 // Increment
                 else if (IsToken(Token.Increment))
+                {
+                    ReadToken();
                     return true;
+                }
 
                 // Decrement
                 else if (IsToken(Token.Decrement))
+                {
+                    ReadToken();
                     return true;
+                }
 
-                UnreadToken();
+
             }
 
             return false;
@@ -1132,15 +1176,24 @@ namespace SynAna
         {
             // Identifier
             if (IsToken(Token.Identifier))
+            {
+                ReadToken();
                 return true;
+            }
 
             // IntegerConstant
             if (IsToken(Token.IntegerConstant))
+            {
+                ReadToken();
                 return true;
+            }
 
             // FloatingPointConstant
             if (IsToken(Token.FloatingPointConstant))
+            {
+                ReadToken();
                 return true;
+            }
 
             // ParenthisOpen expression ParenthisClose
             if (IsToken(Token.ParenthesisOpen))
@@ -1150,16 +1203,19 @@ namespace SynAna
                 // expression ParenthisClose
                 if (expression())
                 {
-                    ReadToken();
+                    
 
                     // ParenthisClose
                     if (IsToken(Token.ParenthesisClose))
+                    {
+                        ReadToken();
                         return true;
+                    }
 
-                    UnreadToken();
+
                 }
 
-                UnreadToken();
+
             }
 
             return false;
@@ -1177,7 +1233,7 @@ namespace SynAna
             // expression Comma assignment_expression
             if (expression())
             {
-                ReadToken();
+                
 
                 // Comma assignment_expression
                 if (IsToken(Token.Comma))
@@ -1188,10 +1244,10 @@ namespace SynAna
                     if (assignment_expression())
                         return true;
 
-                    UnreadToken();
+
                 }
 
-                UnreadToken();
+
             }
 
             return false;
@@ -1208,21 +1264,21 @@ namespace SynAna
             // unary_expression assignment_operator assignment_expression
             if (unary_expression())
             {
-                ReadToken();
+                
 
                 // assignment_operator assignment_expression
                 if (assignment_operator())
                 {
-                    ReadToken();
+                    
 
                     // assignment_expression
                     if (assignment_expression())
                         return true;
 
-                    UnreadToken();
+
                 }
 
-                UnreadToken();
+
             }
 
             return false;
@@ -1247,7 +1303,10 @@ namespace SynAna
                 || IsToken(Token.MinusAssign)
                 || IsToken(Token.LeftAssign)
                 || IsToken(Token.RightAssign))
+            {
+                ReadToken();
                 return true;
+            }
 
             return false;
         }
@@ -1264,7 +1323,7 @@ namespace SynAna
             // argument_expression_list Comma assignment_expression
             else if (argument_expression_list())
             {
-                ReadToken();
+                
 
                 if (IsToken(Token.Comma))
                 {
@@ -1273,10 +1332,10 @@ namespace SynAna
                     if (assignment_expression())
                         return true;
 
-                    UnreadToken();
+
                 }
 
-                UnreadToken();
+
             }
 
             return false;
@@ -1297,7 +1356,10 @@ namespace SynAna
                 || IsToken(Token.Minus)
                 || IsToken(Token.Negate)
                 || IsToken(Token.LogicalNot))
+            {
+                ReadToken();
                 return true;
+            }
 
             return false;
         }
@@ -1311,7 +1373,7 @@ namespace SynAna
             // | parameter_list Comma Ellipsis
             if (parameter_list())
             {
-                ReadToken();
+                
 
                 // Comma Ellipsis
                 if (IsToken(Token.Comma))
@@ -1320,18 +1382,21 @@ namespace SynAna
 
                     // Ellipsis
                     if (IsToken(Token.Ellipsis))
+                    {
+                        ReadToken();
                         return true;
+                    }
 
-                    UnreadToken();
+
                 }
                 else
                 {
-                    UnreadToken();
+
 
                     return true;
                 }
 
-                UnreadToken();
+
             }
 
             return false;
@@ -1349,7 +1414,7 @@ namespace SynAna
             // parameter_list Comma parameter_declaration
             else if (parameter_list())
             {
-                ReadToken();
+                
 
                 // Comma parameter_declaration
                 if (IsToken(Token.Comma))
@@ -1360,10 +1425,10 @@ namespace SynAna
                     if (parameter_declaration())
                         return true;
 
-                    UnreadToken();
+
                 }
 
-                UnreadToken();
+
             }
 
             return false;
@@ -1380,7 +1445,7 @@ namespace SynAna
             // | declaration_specifiers
             if (declaration_specifiers())
             {
-                ReadToken();
+                
 
                 if (declarator())
                     return true;
@@ -1391,7 +1456,7 @@ namespace SynAna
 
                 else
                 {
-                    UnreadToken();
+
 
                     return true;
                 }
@@ -1409,7 +1474,7 @@ namespace SynAna
             // pointer direct_abstract_declarator
             if (pointer())
             {
-                ReadToken();
+                
 
                 // direct_abstract_declarator
                 if (direct_abstract_declarator())
@@ -1417,7 +1482,7 @@ namespace SynAna
 
                 else
                 {
-                    UnreadToken();
+
 
                     return true;
                 }
@@ -1451,26 +1516,35 @@ namespace SynAna
 
                 if (parameter_type_list())
                 {
-                    ReadToken();
+                    
 
                     if (IsToken(Token.ParenthesisClose))
+                    {
+                        ReadToken();
                         return true;
+                    }
 
-                    UnreadToken();
+
                 }
                 else if (abstract_declarator())
                 {
-                    ReadToken();
+                    
 
                     if (IsToken(Token.ParenthesisClose))
+                    {
+                        ReadToken();
                         return true;
+                    }
 
-                    UnreadToken();
+
                 }
                 else if (IsToken(Token.ParenthesisClose))
+                {
+                    ReadToken();
                     return true;
+                }
 
-                UnreadToken();
+
             }
 
             // BracketOpen BracketClose
@@ -1481,19 +1555,25 @@ namespace SynAna
 
                 if (logical_or_expression())
                 {
-                    ReadToken();
+                    
 
                     if (IsToken(Token.BracketClose))
+                    {
+                        ReadToken();
                         return true;
+                    }
 
-                    UnreadToken();
+
                 }
 
 
                 else if (IsToken(Token.BracketClose))
+                {
+                    ReadToken();
                     return true;
+                }
 
-                UnreadToken();
+
             }
 
             // direct_abstract_declarator BracketOpen BracketClose
@@ -1503,7 +1583,7 @@ namespace SynAna
 
             else if (direct_abstract_declarator())
             {
-                ReadToken();
+                
 
                 // BracketOpen BracketClose
                 // | BracketOpen constant_expression BracketClose
@@ -1513,18 +1593,24 @@ namespace SynAna
 
                     if (logical_or_expression())
                     {
-                        ReadToken();
+                        
 
                         if (IsToken(Token.BracketClose))
+                        {
+                            ReadToken();
                             return true;
+                        }
 
-                        UnreadToken();
+
                     }
 
                     else if (IsToken(Token.BracketClose))
+                    {
+                        ReadToken();
                         return true;
+                    }
 
-                    UnreadToken();
+
                 }
 
                 // ParenthesisOpen ParenthesisClose
@@ -1536,22 +1622,28 @@ namespace SynAna
 
                     if (parameter_type_list())
                     {
-                        ReadToken();
+                        
 
                         if (IsToken(Token.ParenthesisClose))
+                        {
+                            ReadToken();
                             return true;
+                        }
 
-                        UnreadToken();
+
                     }
 
                     else if (IsToken(Token.ParenthesisClose))
+                    {
+                        ReadToken();
                         return true;
+                    }
 
-                    UnreadToken();
+
                 }
 
 
-                UnreadToken();
+
             }
 
             return false;
@@ -1571,7 +1663,7 @@ namespace SynAna
             // identifier_list comma Identifier
             if (identifier_list())
             {
-                ReadToken();
+                
 
                 // comma Identifier
                 if (IsToken(Token.Comma))
@@ -1580,12 +1672,11 @@ namespace SynAna
 
                     // Identifier
                     if (IsToken(Token.Identifier))
+                    {
+                        ReadToken();
                         return true;
-
-                    UnreadToken();
+                    }
                 }
-
-                UnreadToken();
             }
 
             return false;
@@ -1608,46 +1699,46 @@ namespace SynAna
 
                 // BraceClose
                 if (IsToken(Token.BraceClose))
+                {
+                    ReadToken();
                     return true;
+                }
 
                 // declaration_list BraceClose
                 // | declaration_list statement_list BraceClose
                 else if (declaration_list())
                 {
-                    ReadToken();
-
                     // BraceClose
                     if (IsToken(Token.BraceClose))
+                    {
+                        ReadToken();
                         return true;
+                    }
 
                     // statement_list BraceClose
                     else if (statement_list())
                     {
-                        ReadToken();
-
                         // BraceClose
                         if (IsToken(Token.BraceClose))
+                        {
+                            ReadToken();
                             return true;
-
-                        UnreadToken();
+                        }
                     }
-
-                    UnreadToken();
                 }
 
                 // statement_list BraceClose
                 else if (statement_list())
                 {
-                    ReadToken();
+                    
 
                     // BraceClose
                     if (IsToken(Token.BraceClose))
+                    {
+                        ReadToken();
                         return true;
-
-                    UnreadToken();
+                    }
                 }
-
-                UnreadToken();
             }
 
             return false;
@@ -1665,13 +1756,9 @@ namespace SynAna
             // declaration_list declaration
             else if (declaration_list())
             {
-                ReadToken();
-
                 // declaration
                 if (declaration())
                     return true;
-
-                UnreadToken();
             }
             return false;
         }
@@ -1685,25 +1772,27 @@ namespace SynAna
             // | declaration_specifiers init_declarator_list SemiCollon
             if (declaration_specifiers())
             {
-                ReadToken();
+                
 
                 // SemiCollon
                 if (IsToken(Token.SemiCollon))
+                {
+                    ReadToken();
                     return true;
+                }
 
                 // init_declarator_list SemiCollon
                 else if (init_declarator_list())
                 {
-                    ReadToken();
+                    
 
                     // SemiCollon
                     if (IsToken(Token.SemiCollon))
+                    {
+                        ReadToken();
                         return true;
-
-                    UnreadToken();
+                    }
                 }
-
-                UnreadToken();
             }
 
             return false;
@@ -1721,7 +1810,7 @@ namespace SynAna
             // init_declarator_list Comma init_declarator
             else if (init_declarator_list())
             {
-                ReadToken();
+                
 
                 // Comma init_declarator
                 if (IsToken(Token.Comma))
@@ -1732,10 +1821,10 @@ namespace SynAna
                     if (init_declarator())
                         return true;
 
-                    UnreadToken();
+
                 }
 
-                UnreadToken();
+
             }
 
             return false;
@@ -1748,7 +1837,7 @@ namespace SynAna
         {
             if (declarator())
             {
-                ReadToken();
+                
 
                 if (IsToken(Token.Assign))
                 {
@@ -1757,15 +1846,15 @@ namespace SynAna
                     if (initializer())
                         return true;
 
-                    UnreadToken();
+
                 }
                 else
                 {
-                    UnreadToken();
+
                     return true;
                 }
 
-                UnreadToken();
+
             }
 
             return false;
@@ -1791,11 +1880,14 @@ namespace SynAna
                 // | initializer_list Comma BraceClose
                 if (initializer_list())
                 {
-                    ReadToken();
+                    
 
                     // BraceClose
                     if (IsToken(Token.BraceClose))
+                    {
+                        ReadToken();
                         return true;
+                    }
 
                     // Comma BraceClose
                     else if (IsToken(Token.Comma))
@@ -1804,15 +1896,18 @@ namespace SynAna
 
                         // BraceClose
                         if (IsToken(Token.BraceClose))
+                        {
+                            ReadToken();
                             return true;
+                        }
 
-                        UnreadToken();
+
                     }
 
-                    UnreadToken();
+
                 }
 
-                UnreadToken();
+
             }
 
             return false;
@@ -1830,7 +1925,7 @@ namespace SynAna
             // initializer_list Comma initializer
             else if (initializer_list())
             {
-                ReadToken();
+                
 
                 // Comma initializer
                 if (IsToken(Token.Comma))
@@ -1840,11 +1935,7 @@ namespace SynAna
                     // initializer
                     if (initializer())
                         return true;
-
-                    UnreadToken();
                 }
-
-                UnreadToken();
             }
 
             return false;
@@ -1860,12 +1951,10 @@ namespace SynAna
 
             else if (statement_list())
             {
-                ReadToken();
+                
 
                 if (statement())
                     return true;
-
-                UnreadToken();
             }
 
             return false;
@@ -1904,7 +1993,7 @@ namespace SynAna
                 // constant_expression Collon statement
                 if (logical_or_expression())
                 {
-                    ReadToken();
+                    
 
                     // Collon statement
                     if (IsToken(Token.Collon))
@@ -1915,13 +2004,13 @@ namespace SynAna
                         if (statement())
                             return true;
 
-                        UnreadToken();
+
                     }
 
-                    UnreadToken();
+
                 }
 
-                UnreadToken();
+
             }
 
             // Default Collon statement
@@ -1938,10 +2027,10 @@ namespace SynAna
                     if (statement())
                         return true;
 
-                    UnreadToken();
+
                 }
 
-                UnreadToken();
+
             }
 
             return false;
@@ -1954,18 +2043,24 @@ namespace SynAna
         {
             // SemiCollon
             if (IsToken(Token.SemiCollon))
+            {
+                ReadToken();
                 return true;
+            }
 
             // expression SemiCollon
             else if (expression())
             {
-                ReadToken();
+                
 
                 // SemiCollon
                 if (IsToken(Token.SemiCollon))
+                {
+                    ReadToken();
                     return true;
+                }
 
-                UnreadToken();
+
             }
 
             return false;
@@ -1983,7 +2078,7 @@ namespace SynAna
 
                 if (expression_statement_structure())
                 {
-                    ReadToken();
+                    
 
                     if (IsToken(Token.Else))
                     {
@@ -1991,20 +2086,12 @@ namespace SynAna
 
                         if (statement())
                             return true;
-
-                        UnreadToken();
                     }
                     else
                     {
-                        UnreadToken();
-
                         return true;
                     }
-
-                    UnreadToken();
                 }
-
-                UnreadToken();
             }
 
             return false;
@@ -2022,7 +2109,7 @@ namespace SynAna
                 // expression ParenthesisClose statement
                 if (expression())
                 {
-                    ReadToken();
+                    
 
                     // ParenthesisClose statement
                     if (IsToken(Token.ParenthesisClose))
@@ -2033,13 +2120,13 @@ namespace SynAna
                         if (statement())
                             return true;
 
-                        UnreadToken();
+
                     }
 
-                    UnreadToken();
+
                 }
 
-                UnreadToken();
+
             }
 
             return false;
@@ -2059,7 +2146,7 @@ namespace SynAna
                 if (expression_statement_structure())
                     return true;
 
-                UnreadToken();
+
             }
 
             // Do statement While ParenthesisOpen expression ParenthesisClose SemiCollon
@@ -2070,7 +2157,7 @@ namespace SynAna
                 // statement While ParenthesisOpen expression ParenthesisClose SemiCollon
                 if (statement())
                 {
-                    ReadToken();
+                    
 
                     // While ParenthesisOpen expression ParenthesisClose SemiCollon
                     if (IsToken(Token.While))
@@ -2085,7 +2172,7 @@ namespace SynAna
                             // expression ParenthesisClose SemiCollon
                             if (expression())
                             {
-                                ReadToken();
+                                
 
                                 // ParenthesisClose SemiCollon
                                 if (IsToken(Token.ParenthesisClose))
@@ -2094,22 +2181,25 @@ namespace SynAna
 
                                     // SemiCollon
                                     if (IsToken(Token.SemiCollon))
+                                    {
+                                        ReadToken();
                                         return true;
+                                    }
 
-                                    UnreadToken();
+
                                 }
-                                UnreadToken();
+
                             }
 
-                            UnreadToken();
+
                         }
-                        UnreadToken();
+
                     }
 
-                    UnreadToken();
+
                 }
 
-                UnreadToken();
+
             }
 
             // For ParenthesisOpen expression_statement expression_statement ParenthesisClose statement
@@ -2128,18 +2218,18 @@ namespace SynAna
                     // | expression_statement expression_statement expression ParenthesisClose statement
                     if (expression_statement())
                     {
-                        ReadToken();
+                        
 
                         // expression_statement ParenthesisClose statement
                         // | expression_statement expression ParenthesisClose statement
                         if (expression_statement())
                         {
-                            ReadToken();
+                            
 
                             // expression ParenthesisClose statement
                             if (expression())
                             {
-                                ReadToken();
+                                
 
                                 // ParenthesisClose statement
                                 if (IsToken(Token.ParenthesisClose))
@@ -2150,10 +2240,10 @@ namespace SynAna
                                     if (statement())
                                         return true;
 
-                                    UnreadToken();
+
                                 }
 
-                                UnreadToken();
+
                             }
                             // ParenthesisClose statement
                             else if (IsToken(Token.ParenthesisClose))
@@ -2164,19 +2254,19 @@ namespace SynAna
                                 if (statement())
                                     return true;
 
-                                UnreadToken();
+
                             }
 
-                            UnreadToken();
+
                         }
 
-                        UnreadToken();
+
                     }
 
-                    UnreadToken();
+
                 }
 
-                UnreadToken();
+
             }
 
             return false;
@@ -2195,9 +2285,12 @@ namespace SynAna
                 ReadToken();
 
                 if (IsToken(Token.SemiCollon))
+                {
+                    ReadToken();
                     return true;
+                }
 
-                UnreadToken();
+
             }
             // Break SemiCollon
             else if (IsToken(Token.Break))
@@ -2205,9 +2298,12 @@ namespace SynAna
                 ReadToken();
 
                 if (IsToken(Token.SemiCollon))
+                {
+                    ReadToken();
                     return true;
+                }
 
-                UnreadToken();
+
             }
             // Return SemiCollon
             // | Return expression SemiCollon
@@ -2217,21 +2313,21 @@ namespace SynAna
 
                 // SemiCollon
                 if (IsToken(Token.SemiCollon))
+                {
+                    ReadToken();
                     return true;
+                }
 
                 // expression SemiCollon
                 else if (expression())
                 {
-                    ReadToken();
-
                     // SemiCollon
                     if (IsToken(Token.SemiCollon))
+                    {
+                        ReadToken();
                         return true;
-
-                    UnreadToken();
+                    }
                 }
-
-                UnreadToken();
             }
 
             return false;
