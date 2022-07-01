@@ -31,10 +31,21 @@ namespace SynAna
                 Console.WriteLine("NOT Valid Program");
         }
 
-        void ReadToken()
+        void ReadToken() =>
+            ReadToken(_position++);
+
+        void ReadToken(int pos)
         {
             if (_position < _lexicalsCount)
-                _currentTokenResult = _lexicalResult.ElementAt(_position++);
+                _currentTokenResult = _lexicalResult.ElementAt(pos);
+            else
+                _currentTokenResult = default;
+        }
+
+        void UnreadToken()
+        {
+            if (_position > 0)
+                _currentTokenResult = _lexicalResult.ElementAt(--_position);
             else
                 _currentTokenResult = default;
         }
@@ -143,6 +154,8 @@ namespace SynAna
                     ReadToken();
                     return true;
                 }
+
+                UnreadToken();
             }
 
             return false;
@@ -156,6 +169,8 @@ namespace SynAna
 
                 if (primitive_type_specifier())
                     return true;
+
+                UnreadToken();
             }
 
             return false;
@@ -183,9 +198,12 @@ namespace SynAna
                                 return true;
                             }
                         }
+                        UnreadToken();
                     }
                     else
                         return true;
+                    UnreadToken();
+
                 }
                 else if (IsToken(Token.BraceOpen))
                 {
@@ -195,7 +213,11 @@ namespace SynAna
                         if (IsToken(Token.BraceClose))
                             return true;
 
+                    UnreadToken();
                 }
+
+                UnreadToken();
+
             }
 
             return false;
@@ -281,6 +303,7 @@ namespace SynAna
 
                 if (direct_declarator_line())
                     return true;
+                UnreadToken();
             }
 
             else if (IsToken(Token.ParenthesisOpen))
@@ -295,8 +318,11 @@ namespace SynAna
 
                         if (direct_declarator_line())
                             return true;
+                        UnreadToken();
                     }
                 }
+
+                UnreadToken();
             }
 
             return false;
@@ -316,6 +342,7 @@ namespace SynAna
 
                         if (direct_declarator_line())
                             return true;
+                        UnreadToken();
                     }
                 }
 
@@ -325,7 +352,9 @@ namespace SynAna
 
                     if (direct_declarator_line())
                         return true;
+                    UnreadToken();
                 }
+                UnreadToken();
             }
 
             else if (IsToken(Token.ParenthesisOpen))
@@ -340,6 +369,7 @@ namespace SynAna
 
                         if (direct_declarator_line())
                             return true;
+                        UnreadToken();
                     }
                 }
 
@@ -351,6 +381,7 @@ namespace SynAna
 
                         if (direct_declarator_line())
                             return true;
+                        UnreadToken();
                     }
                 }
                 else if (IsToken(Token.ParenthesisClose))
@@ -359,7 +390,9 @@ namespace SynAna
 
                     if (direct_declarator_line())
                         return true;
+                    UnreadToken();
                 }
+                UnreadToken();
             }
 
             return true;
@@ -383,6 +416,7 @@ namespace SynAna
                 if (logical_and_expression())
                     if (logical_or_expression_line())
                         return true;
+                UnreadToken();
             }
 
             return true;
@@ -406,6 +440,7 @@ namespace SynAna
                 if (inclusive_or_expression())
                     if (logical_and_expression_line())
                         return true;
+                UnreadToken();
             }
 
             return true;
@@ -429,6 +464,7 @@ namespace SynAna
                 if (exclusive_or_expression())
                     if (inclusive_or_expression_line())
                         return true;
+                UnreadToken();
             }
 
             return true;
@@ -452,6 +488,7 @@ namespace SynAna
                 if (and_expression())
                     if (exclusive_or_expression_line())
                         return true;
+                UnreadToken();
             }
 
             return true;
@@ -474,8 +511,9 @@ namespace SynAna
 
                 if (and_expression_line())
                     return true;
-            }
 
+                UnreadToken();
+            }
 
             return true;
         }
@@ -498,6 +536,7 @@ namespace SynAna
                 if (relational_expression())
                     if (equality_expression_line())
                         return true;
+                UnreadToken();
             }
 
             else if (IsToken(Token.NotEquals))
@@ -507,6 +546,7 @@ namespace SynAna
                 if (relational_expression())
                     if (equality_expression_line())
                         return true;
+                UnreadToken();
             }
             return true;
         }
@@ -529,6 +569,7 @@ namespace SynAna
                 if (shift_expression())
                     if (relational_expression_line())
                         return true;
+                UnreadToken();
             }
 
             else if (IsToken(Token.Greater))
@@ -538,6 +579,7 @@ namespace SynAna
                 if (shift_expression())
                     if (relational_expression_line())
                         return true;
+                UnreadToken();
             }
 
             else if (IsToken(Token.LessOrEqual))
@@ -547,6 +589,7 @@ namespace SynAna
                 if (shift_expression())
                     if (relational_expression_line())
                         return true;
+                UnreadToken();
             }
 
             else if (IsToken(Token.GreaterOrEqual))
@@ -556,6 +599,7 @@ namespace SynAna
                 if (shift_expression())
                     if (relational_expression_line())
                         return true;
+                UnreadToken();
             }
 
             return true;
@@ -579,6 +623,7 @@ namespace SynAna
                 if (additive_expression())
                     if (shift_expression_line())
                         return true;
+                UnreadToken();
             }
 
             else if (IsToken(Token.ShiftRight))
@@ -588,6 +633,7 @@ namespace SynAna
                 if (additive_expression())
                     if (shift_expression_line())
                         return true;
+                UnreadToken();
             }
 
             return true;
@@ -612,6 +658,7 @@ namespace SynAna
                     if (additive_expression_line())
                         return true;
 
+                UnreadToken();
             }
             else if (IsToken(Token.Minus))
             {
@@ -620,6 +667,7 @@ namespace SynAna
                 if (multiplicative_expression())
                     if (additive_expression_line())
                         return true;
+                UnreadToken();
             }
 
             return true;
@@ -645,6 +693,7 @@ namespace SynAna
                 if (unary_expression())
                     if (multiplicative_expression_line())
                         return true;
+                UnreadToken();
             }
 
             else if (IsToken(Token.Division))
@@ -654,6 +703,7 @@ namespace SynAna
                 if (unary_expression())
                     if (multiplicative_expression_line())
                         return true;
+                UnreadToken();
             }
 
             else if (IsToken(Token.Module))
@@ -663,6 +713,7 @@ namespace SynAna
                 if (unary_expression())
                     if (multiplicative_expression_line())
                         return true;
+                UnreadToken();
             }
 
             return true;
@@ -679,6 +730,7 @@ namespace SynAna
 
                 if (unary_expression())
                     return true;
+                UnreadToken();
             }
 
             if (IsToken(Token.Decrement))
@@ -687,6 +739,7 @@ namespace SynAna
 
                 if (unary_expression())
                     return true;
+                UnreadToken();
             }
 
             if (unary_operator())
@@ -719,6 +772,7 @@ namespace SynAna
 
                         if (postfix_expression_line())
                             return true;
+                        UnreadToken();
                     }
                 }
 
@@ -728,7 +782,9 @@ namespace SynAna
 
                     if (postfix_expression_line())
                         return true;
+                    UnreadToken();
                 }
+                UnreadToken();
             }
 
             else if (IsToken(Token.Dot))
@@ -741,7 +797,9 @@ namespace SynAna
 
                     if (postfix_expression_line())
                         return true;
+                    UnreadToken();
                 }
+                UnreadToken();
             }
 
             else if (IsToken(Token.StructAccessor))
@@ -754,7 +812,9 @@ namespace SynAna
 
                     if (postfix_expression_line())
                         return true;
+                    UnreadToken();
                 }
+                UnreadToken();
             }
 
             else if (IsToken(Token.Increment))
@@ -763,6 +823,8 @@ namespace SynAna
 
                 if (postfix_expression_line())
                     return true;
+
+                UnreadToken();
             }
 
             else if (IsToken(Token.Decrement))
@@ -771,6 +833,8 @@ namespace SynAna
 
                 if (postfix_expression_line())
                     return true;
+
+                UnreadToken();
             }
 
             return true;
@@ -808,6 +872,7 @@ namespace SynAna
                         return true;
                     }
                 }
+                UnreadToken();
             }
 
             return false;
@@ -831,6 +896,7 @@ namespace SynAna
                 if (assignment_expression())
                     if (expression_line())
                         return true;
+                UnreadToken();
             }
 
             return true;
@@ -889,6 +955,7 @@ namespace SynAna
                 if (assignment_expression())
                     if (argument_expression_list_line())
                         return true;
+                UnreadToken();
             }
 
             return true;
@@ -923,8 +990,11 @@ namespace SynAna
                         ReadToken();
                         return true;
                     }
+
+                    UnreadToken();
                 }
-                return true;
+                else
+                    return true;
             }
 
             return false;
@@ -948,6 +1018,8 @@ namespace SynAna
                 if (parameter_declaration())
                     if (parameter_list_line())
                         return true;
+
+                UnreadToken();
             }
 
             return true;
@@ -999,6 +1071,7 @@ namespace SynAna
 
                         if (direct_abstract_declarator_line())
                             return true;
+                        UnreadToken();
                     }
                 }
                 else if (abstract_declarator())
@@ -1009,6 +1082,7 @@ namespace SynAna
 
                         if (direct_abstract_declarator_line())
                             return true;
+                        UnreadToken();
                     }
                 }
                 else if (IsToken(Token.ParenthesisClose))
@@ -1017,7 +1091,9 @@ namespace SynAna
 
                     if (direct_abstract_declarator_line())
                         return true;
+                    UnreadToken();
                 }
+                UnreadToken();
             }
 
             else if (IsToken(Token.BracketOpen))
@@ -1032,6 +1108,7 @@ namespace SynAna
 
                         if (direct_abstract_declarator_line())
                             return true;
+                        UnreadToken();
                     }
                 }
                 else if (IsToken(Token.BracketClose))
@@ -1040,8 +1117,10 @@ namespace SynAna
 
                     if (direct_abstract_declarator_line())
                         return true;
+                    UnreadToken();
                 }
 
+                UnreadToken();
             }
 
             return false;
@@ -1061,6 +1140,7 @@ namespace SynAna
                         ReadToken();
                         if (direct_abstract_declarator_line())
                             return true;
+                        UnreadToken();
                     }
                 }
 
@@ -1069,7 +1149,9 @@ namespace SynAna
                     ReadToken();
                     if (direct_abstract_declarator_line())
                         return true;
+                    UnreadToken();
                 }
+                UnreadToken();
             }
 
             else if (IsToken(Token.ParenthesisOpen))
@@ -1083,6 +1165,7 @@ namespace SynAna
                         ReadToken();
                         if (direct_abstract_declarator_line())
                             return true;
+                        UnreadToken();
                     }
                 }
 
@@ -1091,7 +1174,9 @@ namespace SynAna
                     ReadToken();
                     if (direct_abstract_declarator_line())
                         return true;
+                    UnreadToken();
                 }
+                UnreadToken();
             }
 
             return true;
@@ -1100,8 +1185,14 @@ namespace SynAna
         bool identifier_list()
         {
             if (IsToken(Token.Identifier))
+            {
+                ReadToken();
+
                 if (identifier_list_line())
                     return true;
+
+                UnreadToken();
+            }
 
             return false;
         }
@@ -1118,7 +1209,9 @@ namespace SynAna
 
                     if (identifier_list_line())
                         return true;
+                    UnreadToken();
                 }
+                UnreadToken();
             }
 
             return true;
@@ -1162,6 +1255,7 @@ namespace SynAna
                         return true;
                     }
                 }
+                UnreadToken();
             }
 
             return false;
@@ -1220,6 +1314,7 @@ namespace SynAna
                 if (init_declarator())
                     if (init_declarator_list_line())
                         return true;
+                UnreadToken();
             }
 
             return true;
@@ -1235,6 +1330,7 @@ namespace SynAna
 
                     if (initializer())
                         return true;
+                    UnreadToken();
                 }
 
                 return true;
@@ -1269,8 +1365,10 @@ namespace SynAna
                             ReadToken();
                             return true;
                         }
+                        UnreadToken();
                     }
                 }
+                UnreadToken();
             }
 
             return false;
@@ -1294,6 +1392,7 @@ namespace SynAna
                 if (initializer())
                     if (initializer_list_line())
                         return true;
+                UnreadToken();
             }
 
             return true;
@@ -1339,8 +1438,10 @@ namespace SynAna
 
                         if (statement())
                             return true;
+                        UnreadToken();
                     }
                 }
+                UnreadToken();
             }
 
             else if (IsToken(Token.Default))
@@ -1353,7 +1454,9 @@ namespace SynAna
 
                     if (statement())
                         return true;
+                    UnreadToken();
                 }
+                UnreadToken();
             }
 
             return false;
@@ -1393,10 +1496,22 @@ namespace SynAna
 
                         if (statement())
                             return true;
+                        UnreadToken();
                     }
                     else
                         return true;
                 }
+                UnreadToken();
+            }
+
+            else if (IsToken(Token.Switch))
+            {
+                ReadToken();
+
+                if (expression_statement_structure())
+                    return true;
+
+                UnreadToken();
             }
 
             return false;
@@ -1416,8 +1531,10 @@ namespace SynAna
 
                         if (statement())
                             return true;
+                        UnreadToken();
                     }
                 }
+                UnreadToken();
             }
 
             return false;
@@ -1431,6 +1548,7 @@ namespace SynAna
 
                 if (expression_statement_structure())
                     return true;
+                UnreadToken();
             }
             else if (IsToken(Token.Do))
             {
@@ -1457,11 +1575,15 @@ namespace SynAna
                                         ReadToken();
                                         return true;
                                     }
+                                    UnreadToken();
                                 }
                             }
+                            UnreadToken();
                         }
+                        UnreadToken();
                     }
                 }
+                UnreadToken();
             }
             else if (IsToken(Token.For))
             {
@@ -1480,25 +1602,23 @@ namespace SynAna
                                 {
                                     ReadToken();
 
-                                    // statement
                                     if (statement())
                                         return true;
-
-
+                                    UnreadToken();
                                 }
                             }
                             else if (IsToken(Token.ParenthesisClose))
                             {
                                 ReadToken();
 
-                                // statement
                                 if (statement())
                                     return true;
 
-
+                                UnreadToken();
                             }
                         }
                     }
+                    UnreadToken();
                 }
             }
 
@@ -1516,6 +1636,7 @@ namespace SynAna
                     ReadToken();
                     return true;
                 }
+                UnreadToken();
             }
             else if (IsToken(Token.Break))
             {
@@ -1528,6 +1649,7 @@ namespace SynAna
                 }
 
 
+                UnreadToken();
             }
             else if (IsToken(Token.Return))
             {
@@ -1546,6 +1668,7 @@ namespace SynAna
                         return true;
                     }
                 }
+                UnreadToken();
             }
 
             return false;

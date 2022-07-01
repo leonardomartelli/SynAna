@@ -24,7 +24,10 @@ namespace SynAna.LexAna
                 { "do", Token.Do },
                 { "struct", Token.Struct },
                 { "unsigned", Token.Unsigned },
-                { "long", Token.Long }
+                { "long", Token.Long },
+                { "switch", Token.Switch },
+                { "case", Token.Case },
+                { "default", Token.Default }
             };
 
         private readonly StreamReader _inputStream;
