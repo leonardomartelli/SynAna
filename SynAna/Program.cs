@@ -21,8 +21,6 @@ var syntacticAnalyser = new Syntactic(lexicalResult);
 
 syntacticAnalyser.Analyze();
 
-Console.ReadKey();
-
 string AskUserFileName() =>
     AskUser("Digite o caminho para o arquivo de entrada: ");
 
