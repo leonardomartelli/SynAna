@@ -5,7 +5,7 @@
 		Initial,
 		Word,
 		Number,
-		String
+		Char
 	}
 }
 

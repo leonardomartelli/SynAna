@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 
 namespace SynAna.LexAna
 {
@@ -42,6 +43,7 @@ namespace SynAna.LexAna
 
         private bool _hasPoint;
         private bool _eof;
+        private bool _scape;
 
         private IList<TokenResult> _lexicalResult;
 
@@ -55,7 +57,7 @@ namespace SynAna.LexAna
             _currentColumn = _currentLine = 0;
             _state = State.Initial;
 
-            _hasPoint = _eof = false;
+            _hasPoint = _eof = _scape = false;
 
             _inputStream = inputStream;
 
@@ -140,7 +142,7 @@ namespace SynAna.LexAna
                 ReadChar();
             }
 
-            else if (char.IsLetter(_character) || _character == '_')
+            else if (char.IsLetter(_character) || _character == '_' || _character == '\'')
             {
                 ReadChar();
                 _state = State.Word;
@@ -203,7 +205,7 @@ namespace SynAna.LexAna
                     new Case('=', Token.LessOrEqual),
                     new Case('<', Token.ShiftLeft,
                         new Case('=', Token.LeftAssign)));
-            
+
             else if (_character == '+')
                 return AnalysePossibleCases(Token.Plus,
                     new Case('=', Token.PlusAssign),
@@ -253,6 +255,30 @@ namespace SynAna.LexAna
             {
                 ReadChar();
                 return default;
+            }
+            else if(_character == '\\')
+            {
+                _scape = !_scape;
+
+                ReadChar();
+                return default;
+            }
+            else if (_character == '\'')
+            {
+                if(_scape)
+                {
+                    _scape = false;
+                    ReadChar();
+                    return default;
+                }
+
+                _state = State.Initial;
+
+                var token = IsConstantCharValid()
+                    ? Token.CharConstant
+                    : Token.LexicalError;
+
+                return ComputeToken(token);
             }
             else
             {
@@ -369,5 +395,14 @@ namespace SynAna.LexAna
 
         private void BackSpace() =>
             _lexical = _lexical.Substring(0, _lexical.Length - 1);
+
+        private bool IsConstantCharValid()
+        {
+            var lexicalSize = _lexical.Length;
+
+            var hasOKSize = (lexicalSize == 4 && _lexical[1] == '\\') || lexicalSize == 3;
+
+            return _lexical.First() == '\'' && hasOKSize;
+        }
     }
 }

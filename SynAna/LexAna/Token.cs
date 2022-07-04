@@ -8,6 +8,7 @@
 		IntegerConstant,
 		FloatingPointConstant,
 		StringConstant,
+		CharConstant,
 
 		//Aritmethical Operators
 		Plus,				// +

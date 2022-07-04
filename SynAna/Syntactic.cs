@@ -320,8 +320,6 @@ namespace SynAna
 
                 if (logical_or_expression())
                     return true;
-
-
             }
 
             return false;
@@ -383,8 +381,6 @@ namespace SynAna
 
                     }
                 }
-
-
             }
 
             return false;
@@ -916,6 +912,12 @@ namespace SynAna
             }
 
             if (IsToken(Token.FloatingPointConstant))
+            {
+                ReadToken();
+                return true;
+            }
+
+            if (IsToken(Token.CharConstant))
             {
                 ReadToken();
                 return true;
@@ -1744,7 +1746,6 @@ namespace SynAna
                 }
                 else if (expression())
                 {
-                    // SemiCollon
                     if (IsToken(Token.SemiCollon))
                     {
                         ReadToken();

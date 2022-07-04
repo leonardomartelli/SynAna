@@ -2,32 +2,33 @@ primary_expression
     : Identifier
     | IntegerConstant
     | FloatingPointConstant
+	| CharConstant
     | ParenthisOpen expression ParenthisClose
     ;
 
 // for arrays, pointers n structs
 postfix_expression
-    : BracketOpen expression BracketClose postfix_expression_line
-    | ParenthisOpen ParenthisClose postfix_expression_line
-    | ParenthisOpen argument_expression_list ParenthisClose postfix_expression_line
-    | Dot Identifier postfix_expression_line
-    | StructAccessor Identifier postfix_expression_line
-    | Increment postfix_expression_line
-    | Decrement postfix_expression_line
+    : primary_expression postfix_expression_line	
     ;
 
 postfix_expression_line
-	: primary_expression postfix_expression_line
+        : BracketOpen expression BracketClose postfix_expression_line
+	| ParenthisOpen ParenthisClose postfix_expression_line
+	| ParenthisOpen argument_expression_list ParenthisClose postfix_expression_line
+	| Dot Identifier postfix_expression_line
+	| StructAccessor Identifier postfix_expression_line
+	| Increment postfix_expression_line
+	| Decrement postfix_expression_line
 	| empty
 	;
 
 // passing params
 argument_expression_list
-    : Comma assignment_expression argument_expression_list_line
+    : assignment_expression argument_expression_list_line
     ;
 
 argument_expression_list_line
-	: assignment_expression argument_expression_list_line
+        : Comma assignment_expression argument_expression_list_line
 	| empty
 	;
 
@@ -60,90 +61,90 @@ multiplicative_expression_line
 
 
 additive_expression
-    : Plus multiplicative_expression additive_expression_line
-    | Minus multiplicative_expression additive_expression_line
+    : multiplicative_expression additive_expression_line
     ;
 
 additive_expression_line
-	: multiplicative_expression additive_expression_line
+        : Plus multiplicative_expression additive_expression_line
+        | Minus multiplicative_expression additive_expression_line
 	| empty
 	;
 
 shift_expression
-    : ShiftLeft additive_expression shift_expression_line
-    | ShiftRight additive_expression shift_expression_line
+    : additive_expression shift_expression_line
     ;
 
 shift_expression_line
-	: additive_expression shift_expression_line
+	: ShiftLeft additive_expression shift_expression_line
+        | ShiftRight additive_expression shift_expression_line
 	| empty
 	;
 
 relational_expression
-    : Less shift_expression relational_expression_line
-    | Greater shift_expression relational_expression_line
-    | LessOrEqual shift_expression relational_expression_line
-    | GreaterOrEqual shift_expression relational_expression_line
+    : shift_expression  relational_expression_line
     ;
 
 relational_expression_line
-	: shift_expression  relational_expression_line
+	: Less shift_expression relational_expression_line
+        | Greater shift_expression relational_expression_line
+        | LessOrEqual shift_expression relational_expression_line
+        | GreaterOrEqual shift_expression relational_expression_line
 	| empty
 	;
 
 equality_expression
-	: Equals relational_expression equality_expression_line
-	| NotEquals relational_expression equality_expression_line
+	: relational_expression equality_expression_line
 	;
 
 equality_expression_line
-	: relational_expression equality_expression_line
+	: Equals relational_expression equality_expression_line
+	| NotEquals relational_expression equality_expression_line
 	| empty
 	;
 
 and_expression
-	: And equality_expression and_expression_line
+        : equality_expression and_expression_line
 	;
 
 and_expression_line
-	: equality_expression and_expression_line
+	: And equality_expression and_expression_line
 	| empty
 	;
 
 exclusive_or_expression
-	: Xor and_expression exclusive_or_expression_line
+	: and_expression exclusive_or_expression_line
 	;
 
 exclusive_or_expression_line
-	: and_expression exclusive_or_expression_line
+	: Xor and_expression exclusive_or_expression_line
 	| empty
 	;
 
 inclusive_or_expression
-	: Or excluivse_or_expression inclusive_or_expression_line
+        : exclusive_or_expression inclusive_or_expression_line
 	;
 
 inclusive_or_expression_line
-	: exclusive_or_expression inclusive_or_expression_line
+	: Or excluivse_or_expression inclusive_or_expression_line	
 	| empty
 	;
 	
 
 logical_and_expression
-	: LogicalAnd inclusive_or_expression logical_and_expression_line
+        : inclusive_or_expression logical_and_expression_line
 	;
 
 logical_and_expression_line
-	: inclusive_or_expression logical_and_expression_line
+	: LogicalAnd inclusive_or_expression logical_and_expression_line	
 	| empty
 	;
 
 logical_or_expression
-	: LogicalOr logical_and_expression logical_or_expression_line
+	: logical_and_expression logical_or_expression_line
 	;
 
 logical_or_expression_line
-	: logical_and_expression logical_or_expression_line
+	: LogicalOr logical_and_expression logical_or_expression_line	
 	| empty
 	;
 
@@ -180,11 +181,11 @@ declaration_specifiers
     ;
 
 init_declarator_list
-	: Comma init_declarator init_declarator_list_line
+	: init_declarator init_declarator_list_line
 	;
 
 init_declarator_list_line
-	: init_declarator init_declarator_list_line
+	: Comma init_declarator init_declarator_list_line	
 	| empty
 	;
 
@@ -238,11 +239,12 @@ specifier_list
     ;
 
 struct_declarator_list
-	: Comma struct_declarator struct_declarator_list_line
+	: struct_declarator struct_declarator_list_line
+
 	;
 
 struct_declarator_list_line
-	: struct_declarator struct_declarator_list_line
+	: Comma struct_declarator struct_declarator_list_line
 	| empty
 	;
 
@@ -258,16 +260,16 @@ declarator
 	;
 
 direct_declarator
+	: Identifier direct_declarator_line
+	| ParenthisOpen declarator ParenthisClose direct_declarator_line
+	;
+
+direct_declarator_line
 	: BracketOpen logical_or_expression BracketClose direct_declarator_line
 	| BracketOpen BracketClose direct_declarator_line
 	| ParenthisOpen parameter_type_list ParenthisClose direct_declarator_line
 	| ParenthisOpen identifier_list ParenthisClose direct_declarator_line
 	| ParenthisOpen ParenthisClose direct_declarator_line
-	;
-
-direct_declarator_line
-	: Identifier direct_declarator_line
-	| ParenthisOpen declarator ParenthisClose direct_declarator_line
 	| empty
 	;
 
@@ -282,11 +284,11 @@ pointer
 	;
 
 parameter_list
-	: Comma parameter_declaration parameter_list_line
+	: parameter_declaration parameter_list_line
 	;
 
 parameter_list_line
-	: parameter_declaration parameter_list_line
+	: Comma parameter_declaration parameter_list_line
 	| empty
 	;
 
@@ -297,11 +299,11 @@ parameter_declaration
 	;
 
 identifier_list
-	: Comma Identifier identifier_list_line
+	: Identifier identifier_list_line
 	;
 
 identifier_list_line
-	: Identifier identifier_list_line
+	: Comma Identifier identifier_list_line
 	| empty
 	;
 
@@ -317,15 +319,15 @@ abstract_declarator
 	;
 
 direct_abstract_declarator
-	: BracketOpen BracketClose direct_abstract_declarator_line
+	: ParenthesisOpen abstract_declarator ParenthesisClose direct_abstract_declarator_line
+	| BracketOpen BracketClose direct_abstract_declarator_line
 	| BracketOpen logical_or_expression BracketClose direct_abstract_declarator_line
 	| ParenthesisOpen ParenthesisClose direct_abstract_declarator_line
 	| ParenthesisOpen parameter_type_list ParenthesisClose direct_abstract_declarator_line
 	;
 
 direct_abstract_declarator_line
-	: ParenthesisOpen abstract_declarator ParenthesisClose direct_abstract_declarator_line
-	| BracketOpen BracketClose direct_abstract_declarator_line
+	: BracketOpen BracketClose direct_abstract_declarator_line
 	| BracketOpen logical_or_expression BracketClose direct_abstract_declarator_line
 	| ParenthesisOpen ParenthesisClose direct_abstract_declarator_line
 	| ParenthesisOpen parameter_type_list ParenthesisClose direct_abstract_declarator_line
@@ -339,11 +341,11 @@ initializer
 	;
 
 initializer_list
-	: Comma initializer initializer_list_line
+	: initializer initializer_list_line
 	;
 
 initializer_list_line
-	: initializer initializer_list_line
+	: Comma initializer initializer_list_line
 	| empty
 	;
 
