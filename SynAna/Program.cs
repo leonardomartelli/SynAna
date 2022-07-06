@@ -18,14 +18,11 @@ var lexicalAnalyser = new Lexical(input, folderName);
 
 var lexicalResult = lexicalAnalyser.Analyze();
 
-if (lexicalResult.Any(r => r.Token == Token.LexicalError))
-    Console.WriteLine("Erro léxico");
-else
-{
-    var syntacticAnalyser = new Syntactic(lexicalResult);
+var syntacticAnalyser = new Syntactic(lexicalResult);
 
-    syntacticAnalyser.Analyze();
-}
+syntacticAnalyser.Analyze();
+
+lexicalAnalyser.Close();
 
 string AskUserFileName() =>
     AskUser("Digite o caminho para o arquivo de entrada: ");

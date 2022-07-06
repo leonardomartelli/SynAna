@@ -6,13 +6,12 @@ primary_expression
     | ParenthisOpen expression ParenthisClose
     ;
 
-// for arrays, pointers n structs
 postfix_expression
     : primary_expression postfix_expression_line	
     ;
 
 postfix_expression_line
-        : BracketOpen expression BracketClose postfix_expression_line
+    : BracketOpen expression BracketClose postfix_expression_line
 	| ParenthisOpen ParenthisClose postfix_expression_line
 	| ParenthisOpen argument_expression_list ParenthisClose postfix_expression_line
 	| Dot Identifier postfix_expression_line
@@ -22,13 +21,12 @@ postfix_expression_line
 	| empty
 	;
 
-// passing params
 argument_expression_list
     : assignment_expression argument_expression_list_line
     ;
 
 argument_expression_list_line
-        : Comma assignment_expression argument_expression_list_line
+    : Comma assignment_expression argument_expression_list_line
 	| empty
 	;
 
@@ -103,7 +101,7 @@ equality_expression_line
 	;
 
 and_expression
-        : equality_expression and_expression_line
+    : equality_expression and_expression_line
 	;
 
 and_expression_line
@@ -240,7 +238,6 @@ specifier_list
 
 struct_declarator_list
 	: struct_declarator struct_declarator_list_line
-
 	;
 
 struct_declarator_list_line

@@ -45,6 +45,16 @@ namespace SynAna
         bool IsToken(Token token) =>
             _currentTokenResult?.Token == token;
 
+        int SetPosition() =>
+            _position;
+
+        void RetrievePosition(int position)
+        {
+            _position = position - 1;
+
+            ReadToken();
+        }
+
         bool external_declaration_list()
         {
             while (!IsToken(Token.EOF))
@@ -56,16 +66,14 @@ namespace SynAna
 
         bool external_declaration()
         {
-            var pos = _position;
+            var pos = SetPosition();
 
             if (function_definition())
                 return true;
 
             else
             {
-                _position = pos - 1;
-
-                ReadToken();
+                RetrievePosition(pos);
 
                 if (declaration())
                     return true;
@@ -109,7 +117,7 @@ namespace SynAna
             {
                 if (declaration_specifiers())
                     return true;
-                
+
                 return true;
             }
 
@@ -567,10 +575,9 @@ namespace SynAna
             {
                 ReadToken();
 
-                if (and_expression_line())
-                    return true;
-
-
+                if (equality_expression())
+                    if (and_expression_line())
+                        return true;
             }
 
             return true;
@@ -967,21 +974,20 @@ namespace SynAna
 
         bool assignment_expression()
         {
-            var pos = _position;
+            var pos = SetPosition();
+
             if (unary_expression())
             {
                 if (assignment_operator())
                 {
-                    var pos_assing = _position;
+                    var pos_assing = SetPosition();
 
                     if (assignment_expression())
                         return true;
 
                     else
                     {
-                        _position = pos_assing - 1;
-
-                        ReadToken();
+                        RetrievePosition(pos_assing);
 
                         if (logical_or_expression())
                             return true;
@@ -989,13 +995,11 @@ namespace SynAna
                 }
             }
 
-            {
-                _position = pos - 1;
-                ReadToken();
+            RetrievePosition(pos);
 
-                if (logical_or_expression())
-                    return true;
-            }
+            if (logical_or_expression())
+                return true;
+
 
             return false;
         }
@@ -1497,12 +1501,34 @@ namespace SynAna
 
         bool statement()
         {
-            if (labeled_statement()
-               || compound_statement()
-               || expression_statement()
-               || selection_statement()
-               || iteration_statement()
-               || jump_statement())
+            var pos = SetPosition();
+
+            if (labeled_statement())
+                return true;
+
+            RetrievePosition(pos);
+
+            if (compound_statement())
+                return true;
+
+            RetrievePosition(pos);
+
+            if (expression_statement())
+                return true;
+
+            RetrievePosition(pos);
+
+            if (selection_statement())
+                return true;
+
+            RetrievePosition(pos);
+
+            if (iteration_statement())
+                return true;
+
+            RetrievePosition(pos);
+
+            if (jump_statement())
                 return true;
 
             return false;

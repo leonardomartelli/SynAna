@@ -78,16 +78,13 @@ namespace SynAna.LexAna
                     continue;
 
                 CleanLexical();
-                WriteResult(result);
+
+                yield return WriteResult(result);
             }
 
             var finalResult = new TokenResult(Token.EOF, string.Empty, _currentLine, _currentColumn);
-            WriteResult(finalResult);
 
-            _inputStream.Close();
-            _outputStream.Close();
-
-            return _lexicalResult;
+            yield return WriteResult(finalResult);
         }
 
         private void ReadLine()
@@ -378,13 +375,28 @@ namespace SynAna.LexAna
         private void AppendCharacter() =>
             _lexical += _character;
 
-        private void WriteResult(TokenResult tokenResult)
+        private TokenResult WriteResult(TokenResult tokenResult)
         {
             _outputStream.WriteLine(tokenResult);
 
-            Console.WriteLine(tokenResult);
+            //Console.WriteLine(tokenResult);
 
             _lexicalResult.Add(tokenResult);
+
+            if(tokenResult.Token == Token.LexicalError)
+            {
+                Close();
+
+                throw new Exception($"Lexical Error: {tokenResult}");
+            }
+
+            return tokenResult;
+        }
+
+        public void Close()
+        {
+            _outputStream.Close();
+            _inputStream.Close();
         }
 
         private void CleanLexical() =>
