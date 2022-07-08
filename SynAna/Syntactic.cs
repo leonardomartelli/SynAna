@@ -1101,10 +1101,14 @@ namespace SynAna
                 ReadToken();
 
                 if (parameter_declaration())
+                {
                     if (parameter_list_line())
                         return true;
-
-
+                    else
+                        return false;
+                }
+                else
+                    return false;
             }
 
             return true;
@@ -1355,8 +1359,6 @@ namespace SynAna
             {
                 if (declaration_list())
                     return true;
-
-                return true;
             }
             return false;
         }
@@ -1531,6 +1533,7 @@ namespace SynAna
             if (jump_statement())
                 return true;
 
+
             return false;
         }
 
@@ -1564,9 +1567,7 @@ namespace SynAna
 
                     if (statement())
                         return true;
-
                 }
-
             }
 
             return false;
@@ -1606,7 +1607,6 @@ namespace SynAna
 
                         if (statement())
                             return true;
-
                     }
                     else
                         return true;
@@ -1620,8 +1620,6 @@ namespace SynAna
 
                 if (expression_statement_structure())
                     return true;
-
-
             }
 
             return false;
@@ -1758,9 +1756,6 @@ namespace SynAna
                     ReadToken();
                     return true;
                 }
-
-
-
             }
             else if (IsToken(Token.Return))
             {
@@ -1778,7 +1773,6 @@ namespace SynAna
                         return true;
                     }
                 }
-
             }
 
             return false;

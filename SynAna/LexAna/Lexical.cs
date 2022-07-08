@@ -79,12 +79,14 @@ namespace SynAna.LexAna
 
                 CleanLexical();
 
-                yield return WriteResult(result);
+                WriteResult(result);
             }
 
             var finalResult = new TokenResult(Token.EOF, string.Empty, _currentLine, _currentColumn);
 
-            yield return WriteResult(finalResult);
+            WriteResult(finalResult);
+
+            return _lexicalResult;
         }
 
         private void ReadLine()
