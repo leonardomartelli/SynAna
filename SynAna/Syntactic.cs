@@ -42,6 +42,17 @@ namespace SynAna
                 _currentTokenResult = default;
         }
 
+        bool CanBe(Func<bool> production)
+        {
+            var position = SetPosition();
+
+            var canBe = production();
+
+            RetrievePosition(position);
+
+            return canBe;
+        }
+
         bool IsToken(Token token) =>
             _currentTokenResult?.Token == token;
 
@@ -234,10 +245,13 @@ namespace SynAna
         {
             if (struct_declaration())
             {
-                if (struct_declaration_list())
+                if (CanBe(specifier_list))
+                {
+                    if (struct_declaration_list())
+                        return true;
+                }
+                else
                     return true;
-
-                return true;
             }
 
             return false;
@@ -370,8 +384,6 @@ namespace SynAna
 
                 if (direct_declarator_line())
                     return true;
-
-
             }
 
             else if (IsToken(Token.ParenthesisOpen))
@@ -1075,8 +1087,6 @@ namespace SynAna
                         ReadToken();
                         return true;
                     }
-
-
                 }
                 else
                     return true;
@@ -1313,6 +1323,13 @@ namespace SynAna
             {
                 ReadToken();
 
+                if (IsToken(Token.BraceClose))
+                {
+                    ReadToken();
+
+                    return true;
+                }
+
                 if (compound_body_list())
                 {
                     if (IsToken(Token.BraceClose))
@@ -1333,13 +1350,11 @@ namespace SynAna
         {
             if (compound_body())
             {
-                if (compound_body_list())
+                if(IsToken(Token.BraceClose)|| compound_body_list())
                     return true;
-
-                return false;
             }
 
-            return true;
+            return false;
         }
 
         bool compound_body()
@@ -1357,9 +1372,15 @@ namespace SynAna
         {
             if (declaration())
             {
-                if (declaration_list())
+                if (CanBe(declaration_specifiers))
+                {
+                    if (declaration_list())
+                        return true;
+                }
+                else
                     return true;
             }
+
             return false;
         }
 
