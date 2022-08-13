@@ -13,12 +13,16 @@ namespace SynAna
         private readonly IEnumerable<TokenResult> _lexicalResult;
         private readonly int _lexicalsCount;
 
+        private IDictionary<string, (int line, string value)> _variables;
+
         public Syntactic(IEnumerable<TokenResult> lexicalResult)
         {
             _lexicalResult = lexicalResult;
             _lexicalsCount = _lexicalResult.Count();
 
             _position = -1;
+
+            _variables = new Dictionary<string, (int, string)>();
         }
 
         public void Analyze()
@@ -75,52 +79,8 @@ namespace SynAna
             return true;
         }
 
-        bool external_declaration()
-        {
-            var pos = SetPosition();
-
-            if (function_definition())
-                return true;
-
-            else
-            {
-                RetrievePosition(pos);
-
-                if (declaration())
-                    return true;
-            }
-
-            return false;
-        }
-
-        bool function_definition()
-        {
-            if (declaration_specifiers())
-            {
-                if (declarator())
-                {
-                    if (declaration_list())
-                    {
-                        if (compound_statement())
-                            return true;
-                    }
-                    else if (compound_statement())
-                        return true;
-                }
-            }
-            else if (declarator())
-            {
-                if (declaration_list())
-                {
-                    if (compound_statement())
-                        return true;
-                }
-                else if (compound_statement())
-                    return true;
-            }
-
-            return false;
-        }
+        bool external_declaration() =>
+            declaration();
 
         bool declaration_specifiers()
         {
@@ -289,7 +249,10 @@ namespace SynAna
 
         bool struct_declarator_list()
         {
-            if (struct_declarator())
+            string s = null;
+            int i = 0;
+
+            if (struct_declarator(ref s, ref i))
             {
                 if (struct_declarator_list_line())
                     return true;
@@ -304,8 +267,13 @@ namespace SynAna
             {
                 ReadToken();
 
-                if (struct_declarator())
+                var idName = string.Empty;
+                var line = -1;
+
+                if (struct_declarator(ref idName, ref line))
                 {
+                    RegisterVariable(idName, line);
+
                     if (struct_declarator_list_line())
                         return true;
                 }
@@ -316,9 +284,9 @@ namespace SynAna
             return true;
         }
 
-        bool struct_declarator()
+        bool struct_declarator(ref string idName, ref int line)
         {
-            if (declarator())
+            if (declarator(ref idName, ref line))
             {
                 if (IsToken(Token.Collon))
                 {
@@ -347,15 +315,15 @@ namespace SynAna
             return false;
         }
 
-        bool declarator()
+        bool declarator(ref string idName, ref int line)
         {
             if (pointer())
             {
-                if (direct_declarator())
+                if (direct_declarator(ref idName, ref line))
                     return true;
             }
 
-            else if (direct_declarator())
+            else if (direct_declarator(ref idName, ref line))
                 return true;
 
             return false;
@@ -376,10 +344,13 @@ namespace SynAna
             return false;
         }
 
-        bool direct_declarator()
+        bool direct_declarator(ref string idName, ref int line)
         {
             if (IsToken(Token.Identifier))
             {
+                idName = _currentTokenResult.Lexical;
+                line = _currentTokenResult.Line;
+
                 ReadToken();
 
                 if (direct_declarator_line())
@@ -390,7 +361,7 @@ namespace SynAna
             {
                 ReadToken();
 
-                if (declarator())
+                if (declarator(ref idName, ref line))
                 {
                     if (IsToken(Token.ParenthesisClose))
                     {
@@ -430,7 +401,6 @@ namespace SynAna
 
                     if (direct_declarator_line())
                         return true;
-
                 }
 
             }
@@ -447,7 +417,6 @@ namespace SynAna
 
                         if (direct_declarator_line())
                             return true;
-
                     }
                 }
 
@@ -459,7 +428,6 @@ namespace SynAna
 
                         if (direct_declarator_line())
                             return true;
-
                     }
                 }
                 else if (IsToken(Token.ParenthesisClose))
@@ -468,9 +436,7 @@ namespace SynAna
 
                     if (direct_declarator_line())
                         return true;
-
                 }
-
             }
 
             return true;
@@ -1097,6 +1063,7 @@ namespace SynAna
 
         bool parameter_list()
         {
+
             if (parameter_declaration())
                 if (parameter_list_line())
                     return true;
@@ -1109,6 +1076,8 @@ namespace SynAna
             if (IsToken(Token.Comma))
             {
                 ReadToken();
+
+
 
                 if (parameter_declaration())
                 {
@@ -1128,7 +1097,10 @@ namespace SynAna
         {
             if (declaration_specifiers())
             {
-                if (declarator())
+                var s = string.Empty;
+                var i = 0;
+
+                if (declarator(ref s, ref i))
                     return true;
 
                 else if (abstract_declarator())
@@ -1350,7 +1322,7 @@ namespace SynAna
         {
             if (compound_body())
             {
-                if(IsToken(Token.BraceClose)|| compound_body_list())
+                if (IsToken(Token.BraceClose) || compound_body_list())
                     return true;
             }
 
@@ -1409,9 +1381,16 @@ namespace SynAna
 
         bool init_declarator_list()
         {
-            if (init_declarator())
+            var line = 0;
+            var identifier = string.Empty;
+
+            if (init_declarator(ref identifier, ref line))
+            {
+                RegisterVariable(identifier, line);
+
                 if (init_declarator_list_line())
                     return true;
+            }
 
             return false;
         }
@@ -1422,18 +1401,25 @@ namespace SynAna
             {
                 ReadToken();
 
-                if (init_declarator())
+                var line = 0;
+                var identifier = string.Empty;
+
+                if (init_declarator(ref identifier, ref line))
+                {
+                    RegisterVariable(identifier, line);
+
                     if (init_declarator_list_line())
                         return true;
+                }
 
             }
 
             return true;
         }
 
-        bool init_declarator()
+        bool init_declarator(ref string identifier, ref int line)
         {
-            if (declarator())
+            if (declarator(ref identifier, ref line))
             {
                 if (IsToken(Token.Assign))
                 {
@@ -1441,7 +1427,6 @@ namespace SynAna
 
                     if (initializer())
                         return true;
-
                 }
 
                 return true;
@@ -1797,6 +1782,14 @@ namespace SynAna
             }
 
             return false;
+        }
+
+        void RegisterVariable(string identifier, int line)
+        {
+            if (!_variables.TryGetValue(identifier, out var declaration))
+                _variables.Add(identifier, (line, string.Empty));
+            else
+                Console.WriteLine($"Variable {identifier} already declarated on line {declaration.line}");
         }
     }
 }
