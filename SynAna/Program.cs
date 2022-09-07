@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
 using SynAna;
 using SynAna.LexAna;
 
@@ -16,13 +15,23 @@ if (!Directory.Exists(folderName))
 
 var lexicalAnalyser = new Lexical(input, folderName);
 
-var lexicalResult = lexicalAnalyser.Analyze();
+try
+{
+    var lexicalResult = lexicalAnalyser.Analyze();
 
-var syntacticAnalyser = new Syntactic(lexicalResult);
+    var syntacticAnalyser = new Syntactic(lexicalResult);
 
-syntacticAnalyser.Analyze();
+    syntacticAnalyser.Analyze();
 
-lexicalAnalyser.Close();
+}
+catch (Exception e)
+{
+    Console.WriteLine("ERROR: " + e.Message);
+}
+finally
+{
+    lexicalAnalyser.Close();
+}
 
 string AskUserFileName() =>
     AskUser("Digite o caminho para o arquivo de entrada: ");

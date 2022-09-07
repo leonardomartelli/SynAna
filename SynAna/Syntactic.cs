@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Text;
 using SynAna.LexAna;
 
 namespace SynAna
@@ -13,7 +15,10 @@ namespace SynAna
         private readonly IEnumerable<TokenResult> _lexicalResult;
         private readonly int _lexicalsCount;
 
+        private StringBuilder code;
+
         private IDictionary<string, (int line, string value)> _variables;
+        private IDictionary<string, int> _labels;
 
         public Syntactic(IEnumerable<TokenResult> lexicalResult)
         {
@@ -23,16 +28,19 @@ namespace SynAna
             _position = -1;
 
             _variables = new Dictionary<string, (int, string)>();
+            _labels = new Dictionary<string, int>();
+
+            code = new();
         }
 
         public void Analyze()
         {
             ReadToken();
 
-            if (external_declaration_list())
-                Console.WriteLine("Valid program");
-            else
-                Console.WriteLine("NOT Valid Program");
+            external_declaration_list();
+
+            File.WriteAllText("result.txt", code.ToString());
+
         }
 
         void ReadToken() =>
@@ -79,8 +87,52 @@ namespace SynAna
             return true;
         }
 
-        bool external_declaration() =>
-            declaration();
+        bool external_declaration()
+        {
+            var pos = SetPosition();
+
+            if (function_definition())
+                return true;
+
+            else
+            {
+                RetrievePosition(pos);
+
+                if (declaration(code))
+                    return true;
+            }
+
+            return false;
+        }
+
+        bool function_definition()
+        {
+            if (declaration_specifiers())
+            {
+                if (declarator(new()))
+                {
+                    if (declaration_list(code))
+                    {
+                        if (compound_statement(code))
+                            return true;
+                    }
+                    else if (compound_statement(code))
+                        return true;
+                }
+            }
+            else if (declarator(code))
+            {
+                if (declaration_list(code))
+                {
+                    if (compound_statement(code))
+                        return true;
+                }
+                else if (compound_statement(code))
+                    return true;
+            }
+
+            return false;
+        }
 
         bool declaration_specifiers()
         {
@@ -105,8 +157,6 @@ namespace SynAna
             else if (primitive_type_specifier())
                 return true;
             else if (unsigned_specifier())
-                return true;
-            else if (struct_specifier())
                 return true;
 
             return false;
@@ -161,79 +211,6 @@ namespace SynAna
             return false;
         }
 
-        bool struct_specifier()
-        {
-            if (IsToken(Token.Struct))
-            {
-                ReadToken();
-
-                if (IsToken(Token.Identifier))
-                {
-                    ReadToken();
-
-                    if (IsToken(Token.BraceOpen))
-                    {
-                        ReadToken();
-
-                        if (struct_declaration_list())
-                        {
-                            if (IsToken(Token.BraceClose))
-                            {
-                                ReadToken();
-                                return true;
-                            }
-                        }
-
-                    }
-                    else
-                        return true;
-                }
-                else if (IsToken(Token.BraceOpen))
-                {
-                    ReadToken();
-
-                    if (struct_declaration_list())
-                        if (IsToken(Token.BraceClose))
-                            return true;
-                }
-            }
-
-            return false;
-        }
-
-        bool struct_declaration_list()
-        {
-            if (struct_declaration())
-            {
-                if (CanBe(specifier_list))
-                {
-                    if (struct_declaration_list())
-                        return true;
-                }
-                else
-                    return true;
-            }
-
-            return false;
-        }
-
-        bool struct_declaration()
-        {
-            if (specifier_list())
-            {
-                if (struct_declarator_list())
-                {
-                    if (IsToken(Token.SemiCollon))
-                    {
-                        ReadToken();
-                        return true;
-                    }
-                }
-            }
-
-            return false;
-        }
-
         bool specifier_list()
         {
             if (type_specifier())
@@ -247,83 +224,16 @@ namespace SynAna
             return false;
         }
 
-        bool struct_declarator_list()
+        bool declarator(StringBuilder declaration)
         {
-            string s = null;
-            int i = 0;
 
-            if (struct_declarator(ref s, ref i))
-            {
-                if (struct_declarator_list_line())
-                    return true;
-            }
-
-            return false;
-        }
-
-        bool struct_declarator_list_line()
-        {
-            if (IsToken(Token.Comma))
-            {
-                ReadToken();
-
-                var idName = string.Empty;
-                var line = -1;
-
-                if (struct_declarator(ref idName, ref line))
-                {
-                    RegisterVariable(idName, line);
-
-                    if (struct_declarator_list_line())
-                        return true;
-                }
-
-
-            }
-
-            return true;
-        }
-
-        bool struct_declarator(ref string idName, ref int line)
-        {
-            if (declarator(ref idName, ref line))
-            {
-                if (IsToken(Token.Collon))
-                {
-                    ReadToken();
-
-                    if (logical_or_expression())
-                        return true;
-                    else
-                    {
-
-                        return false;
-                    }
-                }
-
-                return true;
-            }
-
-            else if (IsToken(Token.Collon))
-            {
-                ReadToken();
-
-                if (logical_or_expression())
-                    return true;
-            }
-
-            return false;
-        }
-
-        bool declarator(ref string idName, ref int line)
-        {
             if (pointer())
             {
-                if (direct_declarator(ref idName, ref line))
+                if (direct_declarator(declaration))
                     return true;
             }
 
-            else if (direct_declarator(ref idName, ref line))
+            else if (direct_declarator(declaration))
                 return true;
 
             return false;
@@ -344,12 +254,11 @@ namespace SynAna
             return false;
         }
 
-        bool direct_declarator(ref string idName, ref int line)
+        bool direct_declarator(StringBuilder declaration)
         {
             if (IsToken(Token.Identifier))
             {
-                idName = _currentTokenResult.Lexical;
-                line = _currentTokenResult.Line;
+                declaration.AppendLine($"valor-l {_currentTokenResult.Lexical}");
 
                 ReadToken();
 
@@ -361,7 +270,7 @@ namespace SynAna
             {
                 ReadToken();
 
-                if (declarator(ref idName, ref line))
+                if (declarator(declaration))
                 {
                     if (IsToken(Token.ParenthesisClose))
                     {
@@ -383,7 +292,7 @@ namespace SynAna
             {
                 ReadToken();
 
-                if (logical_or_expression())
+                if (logical_or_expression(new()))
                 {
                     if (IsToken(Token.BracketClose))
                     {
@@ -442,376 +351,453 @@ namespace SynAna
             return true;
         }
 
-        bool logical_or_expression()
+        bool logical_or_expression(StringBuilder exp)
         {
-            if (logical_and_expression())
-                if (logical_or_expression_line())
+            if (logical_and_expression(exp))
+                if (logical_or_expression_line(exp))
                     return true;
 
             return false;
         }
 
-        bool logical_or_expression_line()
+        bool logical_or_expression_line(StringBuilder exp)
         {
             if (IsToken(Token.LogicalOr))
             {
+                var @operator = _currentTokenResult.Lexical;
                 ReadToken();
 
-                if (logical_and_expression())
-                    if (logical_or_expression_line())
+                if (logical_and_expression(exp))
+                    if (logical_or_expression_line(exp))
+                    {
+                        exp.AppendLine(@operator);
                         return true;
-
+                    }
             }
 
             return true;
         }
 
-        bool logical_and_expression()
+        bool logical_and_expression(StringBuilder exp)
         {
-            if (inclusive_or_expression())
-                if (logical_and_expression_line())
+            if (inclusive_or_expression(exp))
+                if (logical_and_expression_line(exp))
                     return true;
 
             return false;
         }
 
-        bool logical_and_expression_line()
+        bool logical_and_expression_line(StringBuilder exp)
         {
             if (IsToken(Token.LogicalAnd))
             {
+                var @operator = _currentTokenResult.Lexical;
                 ReadToken();
 
-                if (inclusive_or_expression())
-                    if (logical_and_expression_line())
+                if (inclusive_or_expression(exp))
+                    if (logical_and_expression_line(exp))
+                    {
+                        exp.AppendLine(@operator);
                         return true;
+                    }
 
             }
 
             return true;
         }
 
-        bool inclusive_or_expression()
+        bool inclusive_or_expression(StringBuilder exp)
         {
-            if (exclusive_or_expression())
-                if (inclusive_or_expression_line())
+            if (exclusive_or_expression(exp))
+                if (inclusive_or_expression_line(exp))
                     return true;
 
             return false;
         }
 
-        bool inclusive_or_expression_line()
+        bool inclusive_or_expression_line(StringBuilder exp)
         {
             if (IsToken(Token.Or))
             {
+                var @operator = _currentTokenResult.Lexical;
                 ReadToken();
 
-                if (exclusive_or_expression())
-                    if (inclusive_or_expression_line())
+                if (exclusive_or_expression(exp))
+                    if (inclusive_or_expression_line(exp))
+                    {
+                        exp.AppendLine(@operator);
                         return true;
+                    }
 
             }
 
             return true;
         }
 
-        bool exclusive_or_expression()
+        bool exclusive_or_expression(StringBuilder exp)
         {
-            if (and_expression())
-                if (exclusive_or_expression_line())
+            if (and_expression(exp))
+                if (exclusive_or_expression_line(exp))
                     return true;
 
             return false;
         }
 
-        bool exclusive_or_expression_line()
+        bool exclusive_or_expression_line(StringBuilder exp)
         {
             if (IsToken(Token.Xor))
             {
+                var @operator = _currentTokenResult.Lexical;
                 ReadToken();
 
-                if (and_expression())
-                    if (exclusive_or_expression_line())
+                if (and_expression(exp))
+                    if (exclusive_or_expression_line(exp))
+                    {
+                        exp.AppendLine(@operator);
                         return true;
+                    }
 
             }
 
             return true;
         }
 
-        bool and_expression()
+        bool and_expression(StringBuilder exp)
         {
-            if (equality_expression())
-                if (and_expression_line())
+            if (equality_expression(exp))
+                if (and_expression_line(exp))
                     return true;
 
             return false;
         }
 
-        bool and_expression_line()
+        bool and_expression_line(StringBuilder exp)
         {
             if (IsToken(Token.And))
             {
+                var @operator = _currentTokenResult.Lexical;
                 ReadToken();
 
-                if (equality_expression())
-                    if (and_expression_line())
+                if (equality_expression(exp))
+                    if (and_expression_line(exp))
+                    {
+                        exp.AppendLine(@operator);
                         return true;
+                    }
             }
 
             return true;
         }
 
-        bool equality_expression()
+        bool equality_expression(StringBuilder exp)
         {
-            if (relational_expression())
-                if (equality_expression_line())
+            if (relational_expression(exp))
+                if (equality_expression_line(exp))
                     return true;
 
             return false;
         }
 
-        bool equality_expression_line()
+        bool equality_expression_line(StringBuilder exp)
         {
             if (IsToken(Token.Equals))
             {
+                var @operator = _currentTokenResult.Lexical;
                 ReadToken();
 
-                if (relational_expression())
-                    if (equality_expression_line())
+                if (relational_expression(exp))
+                    if (equality_expression_line(exp))
+                    {
+                        exp.AppendLine(@operator);
                         return true;
+                    }
 
             }
 
             else if (IsToken(Token.NotEquals))
             {
+                var @operator = _currentTokenResult.Lexical;
                 ReadToken();
 
-                if (relational_expression())
-                    if (equality_expression_line())
+                if (relational_expression(exp))
+                    if (equality_expression_line(exp))
+                    {
+                        exp.AppendLine(@operator);
                         return true;
+                    }
 
             }
             return true;
         }
 
-        bool relational_expression()
+        bool relational_expression(StringBuilder exp)
         {
-            if (shift_expression())
-                if (relational_expression_line())
+            if (shift_expression(exp))
+                if (relational_expression_line(exp))
                     return true;
 
             return false;
         }
 
-        bool relational_expression_line()
+        bool relational_expression_line(StringBuilder exp)
         {
             if (IsToken(Token.Less))
             {
+                var @operator = _currentTokenResult.Lexical;
                 ReadToken();
 
-                if (shift_expression())
-                    if (relational_expression_line())
+                if (shift_expression(exp))
+                    if (relational_expression_line(exp))
+                    {
+                        exp.AppendLine(@operator);
                         return true;
+                    }
 
             }
 
             else if (IsToken(Token.Greater))
             {
+                var @operator = _currentTokenResult.Lexical;
                 ReadToken();
 
-                if (shift_expression())
-                    if (relational_expression_line())
+                if (shift_expression(exp))
+                    if (relational_expression_line(exp))
+                    {
+                        exp.AppendLine(@operator);
                         return true;
+                    }
 
             }
 
             else if (IsToken(Token.LessOrEqual))
             {
+                var @operator = _currentTokenResult.Lexical;
                 ReadToken();
 
-                if (shift_expression())
-                    if (relational_expression_line())
+                if (shift_expression(exp))
+                    if (relational_expression_line(exp))
+                    {
+                        exp.AppendLine(@operator);
                         return true;
+                    }
 
             }
 
             else if (IsToken(Token.GreaterOrEqual))
             {
+                var @operator = _currentTokenResult.Lexical;
                 ReadToken();
 
-                if (shift_expression())
-                    if (relational_expression_line())
+                if (shift_expression(exp))
+                    if (relational_expression_line(exp))
+                    {
+                        exp.AppendLine(@operator);
                         return true;
-
+                    }
             }
 
             return true;
         }
 
-        bool shift_expression()
+        bool shift_expression(StringBuilder exp)
         {
-            if (additive_expression())
-                if (shift_expression_line())
+            if (additive_expression(exp))
+                if (shift_expression_line(exp))
                     return true;
 
             return false;
         }
 
-        bool shift_expression_line()
+        bool shift_expression_line(StringBuilder exp)
         {
             if (IsToken(Token.ShiftLeft))
             {
+                var @operator = _currentTokenResult.Lexical;
                 ReadToken();
 
-                if (additive_expression())
-                    if (shift_expression_line())
+                if (additive_expression(exp))
+                    if (shift_expression_line(exp))
+                    {
+                        exp.AppendLine(@operator);
                         return true;
+                    }
 
             }
 
             else if (IsToken(Token.ShiftRight))
             {
+                var @operator = _currentTokenResult.Lexical;
                 ReadToken();
 
-                if (additive_expression())
-                    if (shift_expression_line())
+                if (additive_expression(exp))
+                    if (shift_expression_line(exp))
+                    {
+                        exp.AppendLine(@operator);
                         return true;
+                    }
 
             }
 
             return true;
         }
 
-        bool additive_expression()
+        bool additive_expression(StringBuilder exp)
         {
-            if (multiplicative_expression())
-                if (additive_expression_line())
+            if (multiplicative_expression(exp))
+                if (additive_expression_line(exp))
                     return true;
 
             return false;
         }
 
-        bool additive_expression_line()
+        bool additive_expression_line(StringBuilder exp)
         {
             if (IsToken(Token.Plus))
             {
+                var @operator = _currentTokenResult.Lexical;
                 ReadToken();
 
-                if (multiplicative_expression())
-                    if (additive_expression_line())
+                if (multiplicative_expression(exp))
+                    if (additive_expression_line(exp))
+                    {
+                        exp.AppendLine(@operator);
                         return true;
+                    }
 
 
             }
             else if (IsToken(Token.Minus))
             {
+                var @operator = _currentTokenResult.Lexical;
                 ReadToken();
 
-                if (multiplicative_expression())
-                    if (additive_expression_line())
+                if (multiplicative_expression(exp))
+                    if (additive_expression_line(exp))
+                    {
+                        exp.AppendLine(@operator);
                         return true;
+                    }
 
             }
 
             return true;
         }
 
-        bool multiplicative_expression()
+        bool multiplicative_expression(StringBuilder exp)
         {
 
-            if (unary_expression())
-                if (multiplicative_expression_line())
+            if (unary_expression(exp))
+                if (multiplicative_expression_line(exp))
                     return true;
 
 
             return false;
         }
 
-        bool multiplicative_expression_line()
+        bool multiplicative_expression_line(StringBuilder exp)
         {
             if (IsToken(Token.Product))
             {
+                var @operator = _currentTokenResult.Lexical;
                 ReadToken();
 
-                if (unary_expression())
-                    if (multiplicative_expression_line())
+                if (unary_expression(exp))
+                    if (multiplicative_expression_line(exp))
+                    {
+                        exp.AppendLine(@operator);
                         return true;
+                    }
 
             }
 
             else if (IsToken(Token.Division))
             {
+                var @operator = _currentTokenResult.Lexical;
                 ReadToken();
 
-                if (unary_expression())
-                    if (multiplicative_expression_line())
+                if (unary_expression(exp))
+                    if (multiplicative_expression_line(exp))
+                    {
+                        exp.AppendLine(@operator);
                         return true;
-
+                    }
             }
 
             else if (IsToken(Token.Module))
             {
+                var @operator = _currentTokenResult.Lexical;
                 ReadToken();
 
-                if (unary_expression())
-                    if (multiplicative_expression_line())
+                if (unary_expression(exp))
+                    if (multiplicative_expression_line(exp))
+                    {
+                        exp.AppendLine(@operator);
                         return true;
+                    }
 
             }
 
             return true;
         }
 
-        bool unary_expression()
+        bool unary_expression(StringBuilder exp, bool isAssignment = false)
         {
-            if (postfix_expression())
+            if (postfix_expression(exp, isAssignment))
                 return true;
 
             if (IsToken(Token.Increment))
             {
+                var @operator = _currentTokenResult.Lexical;
                 ReadToken();
 
-                if (unary_expression())
+                if (unary_expression(exp))
+                {
+                    exp.AppendLine(@operator);
                     return true;
+                }
             }
 
             if (IsToken(Token.Decrement))
             {
+                var @operator = _currentTokenResult.Lexical;
                 ReadToken();
 
-                if (unary_expression())
+                if (unary_expression(exp))
+                {
+                    exp.AppendLine(@operator);
                     return true;
+                }
             }
 
             if (unary_operator())
-                if (unary_expression())
+                if (unary_expression(exp))
                     return true;
 
             return false;
         }
 
-        bool postfix_expression()
+        bool postfix_expression(StringBuilder exp, bool isAssignment = false)
         {
-            if (primary_expression())
-                if (postfix_expression_line())
+            if (primary_expression(exp, isAssignment))
+                if (postfix_expression_line(exp))
                     return true;
 
             return false;
         }
 
-        bool postfix_expression_line()
+        bool postfix_expression_line(StringBuilder exp)
         {
             if (IsToken(Token.ParenthesisOpen))
             {
                 ReadToken();
 
-                if (argument_expression_list())
+                if (assignment_expression(exp))
                 {
                     if (IsToken(Token.ParenthesisClose))
                     {
                         ReadToken();
 
-                        if (postfix_expression_line())
+                        if (postfix_expression_line(exp))
                             return true;
 
                     }
@@ -821,7 +807,7 @@ namespace SynAna
                 {
                     ReadToken();
 
-                    if (postfix_expression_line())
+                    if (postfix_expression_line(exp))
                         return true;
 
                 }
@@ -834,12 +820,14 @@ namespace SynAna
 
                 if (IsToken(Token.Identifier))
                 {
+                    var @operator = _currentTokenResult.Lexical;
                     ReadToken();
 
-                    if (postfix_expression_line())
+                    if (postfix_expression_line(exp))
+                    {
+                        exp.AppendLine(@operator);
                         return true;
-
-
+                    }
                 }
 
             }
@@ -852,7 +840,7 @@ namespace SynAna
                 {
                     ReadToken();
 
-                    if (postfix_expression_line())
+                    if (postfix_expression_line(exp))
                         return true;
 
                 }
@@ -863,47 +851,76 @@ namespace SynAna
             {
                 ReadToken();
 
-                if (postfix_expression_line())
+
+                if (postfix_expression_line(exp))
+                {
+
+                    var identifier = exp.ToString().Split(' ', StringSplitOptions.RemoveEmptyEntries)[^1];
+                    exp.Clear();
+                    exp.AppendLine($"valor-l {identifier}");
+                    exp.AppendLine($"valor-r {identifier}");
+
+                    exp.AppendLine("push 1");
+
+                    exp.AppendLine("+");
+                    exp.AppendLine("=");
+
                     return true;
-
-
+                }
             }
 
             else if (IsToken(Token.Decrement))
             {
                 ReadToken();
 
-                if (postfix_expression_line())
+
+                if (postfix_expression_line(exp))
+                {
+                    var identifier = exp.ToString().Split(' ', StringSplitOptions.RemoveEmptyEntries)[^1];
+                    exp.Clear();
+                    exp.Append($"valor-l {identifier}");
+                    exp.Append($"valor-r {identifier}");
+
+                    exp.AppendLine("push 1");
+
+                    exp.AppendLine("-");
+                    exp.AppendLine("=");
+
                     return true;
-
-
+                }
             }
 
             return true;
         }
 
-        bool primary_expression()
+        bool primary_expression(StringBuilder exp, bool isAssignment = false)
         {
             if (IsToken(Token.Identifier))
             {
+                var preffix = isAssignment ? "valor-l" : "valor-r";
+
+                exp.AppendLine($"{preffix} {_currentTokenResult.Lexical}");
                 ReadToken();
                 return true;
             }
 
             if (IsToken(Token.IntegerConstant))
             {
+                exp.AppendLine("push " + _currentTokenResult.Lexical);
                 ReadToken();
                 return true;
             }
 
             if (IsToken(Token.FloatingPointConstant))
             {
+                exp.AppendLine("push " + _currentTokenResult.Lexical);
                 ReadToken();
                 return true;
             }
 
             if (IsToken(Token.CharConstant))
             {
+                exp.AppendLine("push " + _currentTokenResult.Lexical);
                 ReadToken();
                 return true;
             }
@@ -912,7 +929,7 @@ namespace SynAna
             {
                 ReadToken();
 
-                if (expression())
+                if (expression(exp))
                 {
                     if (IsToken(Token.ParenthesisClose))
                     {
@@ -920,69 +937,106 @@ namespace SynAna
                         return true;
                     }
                 }
-
             }
 
             return false;
         }
 
-        bool expression()
+        bool expression(StringBuilder exp)
         {
-            if (assignment_expression())
-                if (expression_line())
+            if (assignment_expression(exp))
+                if (expression_line(exp))
                     return true;
 
             return false;
         }
 
-        bool expression_line()
+        bool expression_line(StringBuilder exp)
         {
             if (IsToken(Token.Comma))
             {
                 ReadToken();
 
-                if (assignment_expression())
-                    if (expression_line())
+                var secondExp = new StringBuilder();
+                if (assignment_expression(secondExp))
+                    if (expression_line(secondExp))
+                    {
+                        exp.Append(secondExp);
                         return true;
+                    }
 
+                return false;
             }
 
             return true;
         }
 
-        bool assignment_expression()
+        bool assignment_expression(StringBuilder exp)
         {
             var pos = SetPosition();
 
-            if (unary_expression())
+            var assingmentExp = new StringBuilder();
+
+            if (unary_expression(assingmentExp, true))
             {
-                if (assignment_operator())
+                var assignOperator = new StringBuilder();
+
+                if (assignment_operator(assignOperator))
                 {
                     var pos_assing = SetPosition();
 
-                    if (assignment_expression())
+                    var rightSideExp = new StringBuilder();
+
+                    if (assignment_expression(rightSideExp))
+                    {
+                        var isNormalAssingment = assignOperator.Equals("=");
+
+                        if (!isNormalAssingment)
+                        {
+                            var identifier = assingmentExp.ToString().Split(' ', StringSplitOptions.RemoveEmptyEntries)[^1];
+
+                            assingmentExp.AppendLine($"valor-r {identifier}");
+                        }
+
+                        assingmentExp.AppendLine(rightSideExp.ToString());
+
+                        if (!isNormalAssingment)
+                            assingmentExp.AppendLine(assignOperator.ToString()[..^1].ToString());
+
+                        assingmentExp.AppendLine("=");
+
+                        exp.Append(assingmentExp);
+
                         return true;
+                    }
 
                     else
                     {
                         RetrievePosition(pos_assing);
 
-                        if (logical_or_expression())
+                        if (logical_or_expression(rightSideExp))
+                        {
+                            assingmentExp.AppendLine(rightSideExp.ToString());
+                            assingmentExp.AppendLine(assignOperator.ToString());
+
+                            exp.Append(assingmentExp);
+
+
                             return true;
+                        }
                     }
                 }
             }
 
             RetrievePosition(pos);
 
-            if (logical_or_expression())
+            if (logical_or_expression(exp))
                 return true;
-
 
             return false;
         }
 
-        bool assignment_operator()
+        bool assignment_operator(StringBuilder @operator)
         {
             if (IsToken(Token.Assign)
                 || IsToken(Token.ProductAssign)
@@ -993,35 +1047,13 @@ namespace SynAna
                 || IsToken(Token.LeftAssign)
                 || IsToken(Token.RightAssign))
             {
+                @operator.Append(_currentTokenResult.Lexical);
+
                 ReadToken();
                 return true;
             }
 
             return false;
-        }
-
-        bool argument_expression_list()
-        {
-            if (assignment_expression())
-                if (argument_expression_list_line())
-                    return true;
-
-            return false;
-        }
-
-        bool argument_expression_list_line()
-        {
-            if (IsToken(Token.Comma))
-            {
-                ReadToken();
-
-                if (assignment_expression())
-                    if (argument_expression_list_line())
-                        return true;
-
-            }
-
-            return true;
         }
 
         bool unary_operator()
@@ -1097,10 +1129,7 @@ namespace SynAna
         {
             if (declaration_specifiers())
             {
-                var s = string.Empty;
-                var i = 0;
-
-                if (declarator(ref s, ref i))
+                if (declarator(new()))
                     return true;
 
                 else if (abstract_declarator())
@@ -1116,19 +1145,19 @@ namespace SynAna
         {
             if (pointer())
             {
-                if (direct_abstract_declarator())
+                if (direct_abstract_declarator(new()))
                     return true;
 
                 return true;
             }
 
-            else if (direct_abstract_declarator())
+            else if (direct_abstract_declarator(new()))
                 return true;
 
             return false;
         }
 
-        bool direct_abstract_declarator()
+        bool direct_abstract_declarator(StringBuilder exp)
         {
             if (IsToken(Token.ParenthesisOpen))
             {
@@ -1140,7 +1169,7 @@ namespace SynAna
                     {
                         ReadToken();
 
-                        if (direct_abstract_declarator_line())
+                        if (direct_abstract_declarator_line(exp))
                             return true;
 
                     }
@@ -1151,7 +1180,7 @@ namespace SynAna
                     {
                         ReadToken();
 
-                        if (direct_abstract_declarator_line())
+                        if (direct_abstract_declarator_line(exp))
                             return true;
 
 
@@ -1161,7 +1190,7 @@ namespace SynAna
                 {
                     ReadToken();
 
-                    if (direct_abstract_declarator_line())
+                    if (direct_abstract_declarator_line(exp))
                         return true;
 
                 }
@@ -1172,13 +1201,13 @@ namespace SynAna
             {
                 ReadToken();
 
-                if (logical_or_expression())
+                if (logical_or_expression(exp))
                 {
                     if (IsToken(Token.BracketClose))
                     {
                         ReadToken();
 
-                        if (direct_abstract_declarator_line())
+                        if (direct_abstract_declarator_line(exp))
                             return true;
 
                     }
@@ -1187,7 +1216,7 @@ namespace SynAna
                 {
                     ReadToken();
 
-                    if (direct_abstract_declarator_line())
+                    if (direct_abstract_declarator_line(exp))
                         return true;
 
                 }
@@ -1198,19 +1227,19 @@ namespace SynAna
             return false;
         }
 
-        bool direct_abstract_declarator_line()
+        bool direct_abstract_declarator_line(StringBuilder exp)
         {
 
             if (IsToken(Token.BracketOpen))
             {
                 ReadToken();
 
-                if (logical_or_expression())
+                if (logical_or_expression(exp))
                 {
                     if (IsToken(Token.BracketClose))
                     {
                         ReadToken();
-                        if (direct_abstract_declarator_line())
+                        if (direct_abstract_declarator_line(exp))
                             return true;
 
                     }
@@ -1219,7 +1248,7 @@ namespace SynAna
                 else if (IsToken(Token.BracketClose))
                 {
                     ReadToken();
-                    if (direct_abstract_declarator_line())
+                    if (direct_abstract_declarator_line(exp))
                         return true;
 
                 }
@@ -1235,7 +1264,7 @@ namespace SynAna
                     if (IsToken(Token.ParenthesisClose))
                     {
                         ReadToken();
-                        if (direct_abstract_declarator_line())
+                        if (direct_abstract_declarator_line(exp))
                             return true;
 
                     }
@@ -1244,7 +1273,7 @@ namespace SynAna
                 else if (IsToken(Token.ParenthesisClose))
                 {
                     ReadToken();
-                    if (direct_abstract_declarator_line())
+                    if (direct_abstract_declarator_line(exp))
                         return true;
 
                 }
@@ -1281,15 +1310,13 @@ namespace SynAna
 
                     if (identifier_list_line())
                         return true;
-
                 }
-
             }
 
             return true;
         }
 
-        bool compound_statement()
+        bool compound_statement(StringBuilder stat)
         {
             if (IsToken(Token.BraceOpen))
             {
@@ -1302,7 +1329,7 @@ namespace SynAna
                     return true;
                 }
 
-                if (compound_body_list())
+                if (compound_body_list(stat))
                 {
                     if (IsToken(Token.BraceClose))
                     {
@@ -1311,42 +1338,40 @@ namespace SynAna
                         return true;
                     }
                 }
-
-
             }
 
             return false;
         }
 
-        bool compound_body_list()
+        bool compound_body_list(StringBuilder stat)
         {
-            if (compound_body())
+            if (compound_body(stat))
             {
-                if (IsToken(Token.BraceClose) || compound_body_list())
+                if (IsToken(Token.BraceClose) || compound_body_list(stat))
                     return true;
             }
 
             return false;
         }
 
-        bool compound_body()
+        bool compound_body(StringBuilder stat)
         {
-            if (declaration_list())
+            if (declaration_list(stat))
                 return true;
 
-            else if (statement_list())
+            else if (statement_list(stat))
                 return true;
 
             return false;
         }
 
-        bool declaration_list()
+        bool declaration_list(StringBuilder stat)
         {
-            if (declaration())
+            if (declaration(stat))
             {
                 if (CanBe(declaration_specifiers))
                 {
-                    if (declaration_list())
+                    if (declaration_list(stat))
                         return true;
                 }
                 else
@@ -1356,7 +1381,7 @@ namespace SynAna
             return false;
         }
 
-        bool declaration()
+        bool declaration(StringBuilder declaration)
         {
             if (declaration_specifiers())
             {
@@ -1366,7 +1391,7 @@ namespace SynAna
                     return true;
                 }
 
-                else if (init_declarator_list())
+                else if (init_declarator_list(declaration))
                 {
                     if (IsToken(Token.SemiCollon))
                     {
@@ -1379,36 +1404,27 @@ namespace SynAna
             return false;
         }
 
-        bool init_declarator_list()
+        bool init_declarator_list(StringBuilder declaration)
         {
-            var line = 0;
-            var identifier = string.Empty;
 
-            if (init_declarator(ref identifier, ref line))
+            if (init_declarator(declaration))
             {
-                RegisterVariable(identifier, line);
-
-                if (init_declarator_list_line())
+                if (init_declarator_list_line(declaration))
                     return true;
             }
 
             return false;
         }
 
-        bool init_declarator_list_line()
+        bool init_declarator_list_line(StringBuilder declaration)
         {
             if (IsToken(Token.Comma))
             {
                 ReadToken();
 
-                var line = 0;
-                var identifier = string.Empty;
-
-                if (init_declarator(ref identifier, ref line))
+                if (init_declarator(declaration))
                 {
-                    RegisterVariable(identifier, line);
-
-                    if (init_declarator_list_line())
+                    if (init_declarator_list_line(declaration))
                         return true;
                 }
 
@@ -1417,16 +1433,24 @@ namespace SynAna
             return true;
         }
 
-        bool init_declarator(ref string identifier, ref int line)
+        bool init_declarator(StringBuilder stat)
         {
-            if (declarator(ref identifier, ref line))
+            var declaration = new StringBuilder();
+
+            if (declarator(declaration))
             {
                 if (IsToken(Token.Assign))
                 {
                     ReadToken();
 
-                    if (initializer())
+                    if (initializer(declaration))
+                    {
+                        declaration.AppendLine("=");
+
+                        stat.Append(declaration);
+
                         return true;
+                    }
                 }
 
                 return true;
@@ -1435,16 +1459,16 @@ namespace SynAna
             return false;
         }
 
-        bool initializer()
+        bool initializer(StringBuilder stat)
         {
-            if (assignment_expression())
+            if (assignment_expression(stat))
                 return true;
 
             else if (IsToken(Token.BraceOpen))
             {
                 ReadToken();
 
-                if (initializer_list())
+                if (initializer_list(stat))
                 {
                     if (IsToken(Token.BraceClose))
                     {
@@ -1470,23 +1494,23 @@ namespace SynAna
             return false;
         }
 
-        bool initializer_list()
+        bool initializer_list(StringBuilder stat)
         {
-            if (initializer())
-                if (initializer_list_line())
+            if (initializer(stat))
+                if (initializer_list_line(stat))
                     return true;
 
             return false;
         }
 
-        bool initializer_list_line()
+        bool initializer_list_line(StringBuilder stat)
         {
             if (IsToken(Token.Comma))
             {
                 ReadToken();
 
-                if (initializer())
-                    if (initializer_list_line())
+                if (initializer(stat))
+                    if (initializer_list_line(stat))
                         return true;
 
             }
@@ -1494,11 +1518,15 @@ namespace SynAna
             return true;
         }
 
-        bool statement_list()
+        bool statement_list(StringBuilder code)
         {
-            if (statement())
+            var stat = new StringBuilder();
+
+            if (statement(stat))
             {
-                if (statement_list())
+                code.AppendLine(stat.ToString());
+
+                if (statement_list(code))
                     return true;
 
                 return true;
@@ -1507,79 +1535,40 @@ namespace SynAna
             return false;
         }
 
-        bool statement()
+        bool statement(StringBuilder code)
         {
+            var stat = new StringBuilder();
+
             var pos = SetPosition();
 
-            if (labeled_statement())
-                return true;
-
-            RetrievePosition(pos);
-
-            if (compound_statement())
-                return true;
-
-            RetrievePosition(pos);
-
-            if (expression_statement())
-                return true;
-
-            RetrievePosition(pos);
-
-            if (selection_statement())
-                return true;
-
-            RetrievePosition(pos);
-
-            if (iteration_statement())
-                return true;
-
-            RetrievePosition(pos);
-
-            if (jump_statement())
-                return true;
-
-
-            return false;
-        }
-
-        bool labeled_statement()
-        {
-            if (IsToken(Token.Case))
+            if (compound_statement(stat))
             {
-                ReadToken();
-
-                if (logical_or_expression())
-                {
-                    if (IsToken(Token.Collon))
-                    {
-                        ReadToken();
-
-                        if (statement())
-                            return true;
-
-                    }
-                }
-
+                code.AppendLine(stat.ToString());
+                return true;
             }
 
-            else if (IsToken(Token.Default))
+            RetrievePosition(pos);
+            stat.Clear();
+
+            if (expression_statement(stat))
             {
-                ReadToken();
+                code.AppendLine(stat.ToString());
+                return true;
+            }
 
-                if (IsToken(Token.Collon))
-                {
-                    ReadToken();
+            RetrievePosition(pos);
+            stat.Clear();
 
-                    if (statement())
-                        return true;
-                }
+            if (iteration_statement(stat))
+            {
+                code.AppendLine(stat.ToString());
+                return true;
             }
 
             return false;
         }
 
-        bool expression_statement()
+        bool expression_statement(StringBuilder exp)
         {
             if (IsToken(Token.SemiCollon))
             {
@@ -1587,7 +1576,7 @@ namespace SynAna
                 return true;
             }
 
-            else if (expression())
+            else if (expression(exp))
             {
                 if (IsToken(Token.SemiCollon))
                 {
@@ -1599,107 +1588,9 @@ namespace SynAna
             return false;
         }
 
-        bool selection_statement()
+        bool iteration_statement(StringBuilder forCode)
         {
-            if (IsToken(Token.If))
-            {
-                ReadToken();
-
-                if (expression_statement_structure())
-                {
-                    if (IsToken(Token.Else))
-                    {
-                        ReadToken();
-
-                        if (statement())
-                            return true;
-                    }
-                    else
-                        return true;
-                }
-
-            }
-
-            else if (IsToken(Token.Switch))
-            {
-                ReadToken();
-
-                if (expression_statement_structure())
-                    return true;
-            }
-
-            return false;
-        }
-
-        bool expression_statement_structure()
-        {
-            if (IsToken(Token.ParenthesisOpen))
-            {
-                ReadToken();
-
-                if (expression())
-                {
-                    if (IsToken(Token.ParenthesisClose))
-                    {
-                        ReadToken();
-
-                        if (statement())
-                            return true;
-
-                    }
-                }
-
-            }
-
-            return false;
-        }
-
-        bool iteration_statement()
-        {
-            if (IsToken(Token.While))
-            {
-                ReadToken();
-
-                if (expression_statement_structure())
-                    return true;
-
-            }
-            else if (IsToken(Token.Do))
-            {
-                ReadToken();
-
-                if (statement())
-                {
-                    if (IsToken(Token.While))
-                    {
-                        ReadToken();
-
-                        if (IsToken(Token.ParenthesisOpen))
-                        {
-                            ReadToken();
-
-                            if (expression())
-                            {
-                                if (IsToken(Token.ParenthesisClose))
-                                {
-                                    ReadToken();
-
-                                    if (IsToken(Token.SemiCollon))
-                                    {
-                                        ReadToken();
-                                        return true;
-                                    }
-
-                                }
-                            }
-
-                        }
-
-                    }
-                }
-
-            }
-            else if (IsToken(Token.For))
+            if (IsToken(Token.For))
             {
                 ReadToken();
 
@@ -1707,18 +1598,51 @@ namespace SynAna
                 {
                     ReadToken();
 
-                    if (expression_statement())
+                    var initializationExp = new StringBuilder();
+
+                    if (expression_statement(initializationExp))
                     {
-                        if (expression_statement())
+                        if (initializationExp.Length > 0)
+                            forCode.AppendLine(initializationExp.ToString());
+
+                        var loopLabel = RegisterLabel("for_loop");
+                        var exitLabel = RegisterLabel("exit");
+
+                        forCode.AppendLine(loopLabel + ':');
+
+                        var validationExp = new StringBuilder();
+
+                        if (expression_statement(validationExp))
                         {
-                            if (expression())
+                            if (validationExp.Length > 0)
+                            {
+                                forCode.Append(validationExp);
+                                forCode.AppendLine("gofalse " + exitLabel);
+                            }
+
+                            var operationExp = new StringBuilder();
+
+                            if (expression(operationExp))
                             {
                                 if (IsToken(Token.ParenthesisClose))
                                 {
                                     ReadToken();
 
-                                    if (statement())
+                                    var forBody = new StringBuilder();
+
+                                    if (statement(forBody))
+                                    {
+                                        if (forBody.Length > 0)
+                                            forCode.Append(forBody);
+
+                                        if (operationExp.Length > 0)
+                                            forCode.Append(operationExp);
+
+                                        forCode.AppendLine("go " + loopLabel);
+                                        forCode.AppendLine(exitLabel + ':');
+
                                         return true;
+                                    }
 
                                 }
                             }
@@ -1726,10 +1650,21 @@ namespace SynAna
                             {
                                 ReadToken();
 
-                                if (statement())
+                                var forBody = new StringBuilder();
+
+                                if (statement(forBody))
+                                {
+                                    if (forBody.Length > 0)
+                                        forCode.Append(forBody);
+
+                                    if (operationExp.Length > 0)
+                                        forCode.Append(operationExp);
+
+                                    forCode.AppendLine("go " + loopLabel);
+                                    forCode.AppendLine(exitLabel + ':');
+
                                     return true;
-
-
+                                }
                             }
                         }
                     }
@@ -1740,56 +1675,19 @@ namespace SynAna
             return false;
         }
 
-        bool jump_statement()
+        string RegisterLabel(string label)
         {
-            if (IsToken(Token.Continue))
+            if (_labels.ContainsKey(label))
             {
-                ReadToken();
+                _labels[label]++;
 
-                if (IsToken(Token.SemiCollon))
-                {
-                    ReadToken();
-                    return true;
-                }
-
-            }
-            else if (IsToken(Token.Break))
-            {
-                ReadToken();
-
-                if (IsToken(Token.SemiCollon))
-                {
-                    ReadToken();
-                    return true;
-                }
-            }
-            else if (IsToken(Token.Return))
-            {
-                ReadToken();
-                if (IsToken(Token.SemiCollon))
-                {
-                    ReadToken();
-                    return true;
-                }
-                else if (expression())
-                {
-                    if (IsToken(Token.SemiCollon))
-                    {
-                        ReadToken();
-                        return true;
-                    }
-                }
+                return $"{label}_{_labels[label]}";
             }
 
-            return false;
+            _labels.Add(label, 0);
+
+            return $"{label}_0";
         }
 
-        void RegisterVariable(string identifier, int line)
-        {
-            if (!_variables.TryGetValue(identifier, out var declaration))
-                _variables.Add(identifier, (line, string.Empty));
-            else
-                Console.WriteLine($"Variable {identifier} already declarated on line {declaration.line}");
-        }
     }
 }
