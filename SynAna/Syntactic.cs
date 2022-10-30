@@ -26,7 +26,7 @@ namespace SynAna
             ReadToken();
 
             if (external_declaration_list())
-                Console.WriteLine("Valid program");
+                Console.WriteLine("\n\nValid program");
             else
                 Console.WriteLine("NOT Valid Program");
         }
@@ -42,7 +42,7 @@ namespace SynAna
                 _currentTokenResult = default;
         }
 
-        bool CanBe(Func<bool> production)
+        Production CanBe(Func<Production> production)
         {
             var position = SetPosition();
 
@@ -53,7 +53,7 @@ namespace SynAna
             return canBe;
         }
 
-        bool IsToken(Token token) =>
+        Production IsToken(Token token) =>
             _currentTokenResult?.Token == token;
 
         int SetPosition() =>
@@ -66,21 +66,28 @@ namespace SynAna
             ReadToken();
         }
 
-        bool external_declaration_list()
+        Production external_declaration_list()
         {
             while (!IsToken(Token.EOF))
-                if (!external_declaration())
+            {
+                Production external = external_declaration();
+
+                if (!external)
                     return false;
+
+                Console.Write(external.Code);
+            }
 
             return true;
         }
 
-        bool external_declaration()
+        Production external_declaration()
         {
             var pos = SetPosition();
 
-            if (function_definition())
-                return true;
+            Production functionDef = function_definition();
+            if (functionDef)
+                return functionDef;
 
             else
             {
@@ -93,36 +100,50 @@ namespace SynAna
             return false;
         }
 
-        bool function_definition()
+        Production function_definition()
         {
+            var code = new Code();
+
             if (declaration_specifiers())
             {
                 if (declarator())
                 {
                     if (declaration_list())
                     {
-                        if (compound_statement())
-                            return true;
+                        var stat = compound_statement();
+                        if (stat)
+                            return stat;
                     }
-                    else if (compound_statement())
-                        return true;
+                    else
+                    {
+
+                        var stat = compound_statement();
+
+                        if (stat)
+                            return stat;
+                    }
                 }
             }
             else if (declarator())
             {
                 if (declaration_list())
                 {
-                    if (compound_statement())
-                        return true;
+                    var stat = compound_statement();
+                    if (stat)
+                        return stat;
                 }
-                else if (compound_statement())
-                    return true;
+                else
+                {
+                    var stat = compound_statement();
+                    if (stat)
+                        return stat;
+                }
             }
 
             return false;
         }
 
-        bool declaration_specifiers()
+        Production declaration_specifiers()
         {
             if (type_specifier())
             {
@@ -135,7 +156,7 @@ namespace SynAna
             return false;
         }
 
-        bool type_specifier()
+        Production type_specifier()
         {
             if (IsToken(Token.Void))
             {
@@ -152,7 +173,7 @@ namespace SynAna
             return false;
         }
 
-        bool primitive_type_specifier()
+        Production primitive_type_specifier()
         {
             if (IsToken(Token.Char)
                 || IsToken(Token.Int)
@@ -169,7 +190,7 @@ namespace SynAna
             return false;
         }
 
-        bool long_int_specifier()
+        Production long_int_specifier()
         {
             if (IsToken(Token.Long))
             {
@@ -188,7 +209,7 @@ namespace SynAna
             return false;
         }
 
-        bool unsigned_specifier()
+        Production unsigned_specifier()
         {
             if (IsToken(Token.Unsigned))
             {
@@ -201,7 +222,7 @@ namespace SynAna
             return false;
         }
 
-        bool struct_specifier()
+        Production struct_specifier()
         {
             if (IsToken(Token.Struct))
             {
@@ -241,7 +262,7 @@ namespace SynAna
             return false;
         }
 
-        bool struct_declaration_list()
+        Production struct_declaration_list()
         {
             if (struct_declaration())
             {
@@ -257,7 +278,7 @@ namespace SynAna
             return false;
         }
 
-        bool struct_declaration()
+        Production struct_declaration()
         {
             if (specifier_list())
             {
@@ -274,7 +295,7 @@ namespace SynAna
             return false;
         }
 
-        bool specifier_list()
+        Production specifier_list()
         {
             if (type_specifier())
             {
@@ -287,7 +308,7 @@ namespace SynAna
             return false;
         }
 
-        bool struct_declarator_list()
+        Production struct_declarator_list()
         {
             if (struct_declarator())
             {
@@ -298,7 +319,7 @@ namespace SynAna
             return false;
         }
 
-        bool struct_declarator_list_line()
+        Production struct_declarator_list_line()
         {
             if (IsToken(Token.Comma))
             {
@@ -316,7 +337,7 @@ namespace SynAna
             return true;
         }
 
-        bool struct_declarator()
+        Production struct_declarator()
         {
             if (declarator())
             {
@@ -347,7 +368,7 @@ namespace SynAna
             return false;
         }
 
-        bool declarator()
+        Production declarator()
         {
             if (pointer())
             {
@@ -361,7 +382,7 @@ namespace SynAna
             return false;
         }
 
-        bool pointer()
+        Production pointer()
         {
             if (IsToken(Token.Product))
             {
@@ -376,7 +397,7 @@ namespace SynAna
             return false;
         }
 
-        bool direct_declarator()
+        Production direct_declarator()
         {
             if (IsToken(Token.Identifier))
             {
@@ -406,7 +427,7 @@ namespace SynAna
             return false;
         }
 
-        bool direct_declarator_line()
+        Production direct_declarator_line()
         {
             if (IsToken(Token.BracketOpen))
             {
@@ -476,7 +497,7 @@ namespace SynAna
             return true;
         }
 
-        bool logical_or_expression()
+        Production logical_or_expression()
         {
             if (logical_and_expression())
                 if (logical_or_expression_line())
@@ -485,7 +506,7 @@ namespace SynAna
             return false;
         }
 
-        bool logical_or_expression_line()
+        Production logical_or_expression_line()
         {
             if (IsToken(Token.LogicalOr))
             {
@@ -500,7 +521,7 @@ namespace SynAna
             return true;
         }
 
-        bool logical_and_expression()
+        Production logical_and_expression()
         {
             if (inclusive_or_expression())
                 if (logical_and_expression_line())
@@ -509,7 +530,7 @@ namespace SynAna
             return false;
         }
 
-        bool logical_and_expression_line()
+        Production logical_and_expression_line()
         {
             if (IsToken(Token.LogicalAnd))
             {
@@ -524,7 +545,7 @@ namespace SynAna
             return true;
         }
 
-        bool inclusive_or_expression()
+        Production inclusive_or_expression()
         {
             if (exclusive_or_expression())
                 if (inclusive_or_expression_line())
@@ -533,7 +554,7 @@ namespace SynAna
             return false;
         }
 
-        bool inclusive_or_expression_line()
+        Production inclusive_or_expression_line()
         {
             if (IsToken(Token.Or))
             {
@@ -548,7 +569,7 @@ namespace SynAna
             return true;
         }
 
-        bool exclusive_or_expression()
+        Production exclusive_or_expression()
         {
             if (and_expression())
                 if (exclusive_or_expression_line())
@@ -557,7 +578,7 @@ namespace SynAna
             return false;
         }
 
-        bool exclusive_or_expression_line()
+        Production exclusive_or_expression_line()
         {
             if (IsToken(Token.Xor))
             {
@@ -572,7 +593,7 @@ namespace SynAna
             return true;
         }
 
-        bool and_expression()
+        Production and_expression()
         {
             if (equality_expression())
                 if (and_expression_line())
@@ -581,7 +602,7 @@ namespace SynAna
             return false;
         }
 
-        bool and_expression_line()
+        Production and_expression_line()
         {
             if (IsToken(Token.And))
             {
@@ -595,7 +616,7 @@ namespace SynAna
             return true;
         }
 
-        bool equality_expression()
+        Production equality_expression()
         {
             if (relational_expression())
                 if (equality_expression_line())
@@ -604,7 +625,7 @@ namespace SynAna
             return false;
         }
 
-        bool equality_expression_line()
+        Production equality_expression_line()
         {
             if (IsToken(Token.Equals))
             {
@@ -628,7 +649,7 @@ namespace SynAna
             return true;
         }
 
-        bool relational_expression()
+        Production relational_expression()
         {
             if (shift_expression())
                 if (relational_expression_line())
@@ -637,7 +658,7 @@ namespace SynAna
             return false;
         }
 
-        bool relational_expression_line()
+        Production relational_expression_line()
         {
             if (IsToken(Token.Less))
             {
@@ -682,7 +703,7 @@ namespace SynAna
             return true;
         }
 
-        bool shift_expression()
+        Production shift_expression()
         {
             if (additive_expression())
                 if (shift_expression_line())
@@ -691,7 +712,7 @@ namespace SynAna
             return false;
         }
 
-        bool shift_expression_line()
+        Production shift_expression_line()
         {
             if (IsToken(Token.ShiftLeft))
             {
@@ -716,7 +737,7 @@ namespace SynAna
             return true;
         }
 
-        bool additive_expression()
+        Production additive_expression()
         {
             if (multiplicative_expression())
                 if (additive_expression_line())
@@ -725,7 +746,7 @@ namespace SynAna
             return false;
         }
 
-        bool additive_expression_line()
+        Production additive_expression_line()
         {
             if (IsToken(Token.Plus))
             {
@@ -750,7 +771,7 @@ namespace SynAna
             return true;
         }
 
-        bool multiplicative_expression()
+        Production multiplicative_expression()
         {
 
             if (unary_expression())
@@ -761,7 +782,7 @@ namespace SynAna
             return false;
         }
 
-        bool multiplicative_expression_line()
+        Production multiplicative_expression_line()
         {
             if (IsToken(Token.Product))
             {
@@ -796,7 +817,7 @@ namespace SynAna
             return true;
         }
 
-        bool unary_expression()
+        Production unary_expression()
         {
             if (postfix_expression())
                 return true;
@@ -824,7 +845,7 @@ namespace SynAna
             return false;
         }
 
-        bool postfix_expression()
+        Production postfix_expression()
         {
             if (primary_expression())
                 if (postfix_expression_line())
@@ -833,7 +854,7 @@ namespace SynAna
             return false;
         }
 
-        bool postfix_expression_line()
+        Production postfix_expression_line()
         {
             if (IsToken(Token.ParenthesisOpen))
             {
@@ -916,7 +937,7 @@ namespace SynAna
             return true;
         }
 
-        bool primary_expression()
+        Production primary_expression()
         {
             if (IsToken(Token.Identifier))
             {
@@ -960,7 +981,7 @@ namespace SynAna
             return false;
         }
 
-        bool expression()
+        Production expression()
         {
             if (assignment_expression())
                 if (expression_line())
@@ -969,7 +990,7 @@ namespace SynAna
             return false;
         }
 
-        bool expression_line()
+        Production expression_line()
         {
             if (IsToken(Token.Comma))
             {
@@ -984,7 +1005,7 @@ namespace SynAna
             return true;
         }
 
-        bool assignment_expression()
+        Production assignment_expression()
         {
             var pos = SetPosition();
 
@@ -1012,11 +1033,10 @@ namespace SynAna
             if (logical_or_expression())
                 return true;
 
-
             return false;
         }
 
-        bool assignment_operator()
+        Production assignment_operator()
         {
             if (IsToken(Token.Assign)
                 || IsToken(Token.ProductAssign)
@@ -1034,7 +1054,7 @@ namespace SynAna
             return false;
         }
 
-        bool argument_expression_list()
+        Production argument_expression_list()
         {
             if (assignment_expression())
                 if (argument_expression_list_line())
@@ -1043,7 +1063,7 @@ namespace SynAna
             return false;
         }
 
-        bool argument_expression_list_line()
+        Production argument_expression_list_line()
         {
             if (IsToken(Token.Comma))
             {
@@ -1058,7 +1078,7 @@ namespace SynAna
             return true;
         }
 
-        bool unary_operator()
+        Production unary_operator()
         {
             if (IsToken(Token.And)
                 || IsToken(Token.Product)
@@ -1074,7 +1094,7 @@ namespace SynAna
             return false;
         }
 
-        bool parameter_type_list()
+        Production parameter_type_list()
         {
             if (parameter_list())
             {
@@ -1095,7 +1115,7 @@ namespace SynAna
             return false;
         }
 
-        bool parameter_list()
+        Production parameter_list()
         {
             if (parameter_declaration())
                 if (parameter_list_line())
@@ -1104,7 +1124,7 @@ namespace SynAna
             return false;
         }
 
-        bool parameter_list_line()
+        Production parameter_list_line()
         {
             if (IsToken(Token.Comma))
             {
@@ -1124,7 +1144,7 @@ namespace SynAna
             return true;
         }
 
-        bool parameter_declaration()
+        Production parameter_declaration()
         {
             if (declaration_specifiers())
             {
@@ -1140,7 +1160,7 @@ namespace SynAna
             return false;
         }
 
-        bool abstract_declarator()
+        Production abstract_declarator()
         {
             if (pointer())
             {
@@ -1156,7 +1176,7 @@ namespace SynAna
             return false;
         }
 
-        bool direct_abstract_declarator()
+        Production direct_abstract_declarator()
         {
             if (IsToken(Token.ParenthesisOpen))
             {
@@ -1226,7 +1246,7 @@ namespace SynAna
             return false;
         }
 
-        bool direct_abstract_declarator_line()
+        Production direct_abstract_declarator_line()
         {
 
             if (IsToken(Token.BracketOpen))
@@ -1282,7 +1302,7 @@ namespace SynAna
             return true;
         }
 
-        bool identifier_list()
+        Production identifier_list()
         {
             if (IsToken(Token.Identifier))
             {
@@ -1297,7 +1317,7 @@ namespace SynAna
             return false;
         }
 
-        bool identifier_list_line()
+        Production identifier_list_line()
         {
             if (IsToken(Token.Comma))
             {
@@ -1317,7 +1337,7 @@ namespace SynAna
             return true;
         }
 
-        bool compound_statement()
+        Production compound_statement(string escapeLabel = null)
         {
             if (IsToken(Token.BraceOpen))
             {
@@ -1330,13 +1350,15 @@ namespace SynAna
                     return true;
                 }
 
-                if (compound_body_list())
+                Production compoundBody = compound_body_list(escapeLabel);
+
+                if (compoundBody)
                 {
                     if (IsToken(Token.BraceClose))
                     {
                         ReadToken();
 
-                        return true;
+                        return compoundBody;
                     }
                 }
 
@@ -1346,29 +1368,46 @@ namespace SynAna
             return false;
         }
 
-        bool compound_body_list()
+        Production compound_body_list(string escapeLabel)
         {
-            if (compound_body())
+            var code = new Code();
+
+            Production body = compound_body(escapeLabel);
+
+            if (body)
             {
-                if(IsToken(Token.BraceClose)|| compound_body_list())
-                    return true;
+                code += body.Code;
+
+                var list = compound_body_list(escapeLabel);
+
+                if (list)
+                    code += list.Code;
+
+                if (IsToken(Token.BraceClose) || list)
+                    return new(code, true);
             }
 
             return false;
         }
 
-        bool compound_body()
+        Production compound_body(string escapeLabel)
         {
+            var code = new Code();
+
             if (declaration_list())
                 return true;
 
-            else if (statement_list())
-                return true;
+            var stat = statement_list(escapeLabel);
+
+            if (stat)
+            {
+                return stat;
+            }
 
             return false;
         }
 
-        bool declaration_list()
+        Production declaration_list()
         {
             if (declaration())
             {
@@ -1384,7 +1423,7 @@ namespace SynAna
             return false;
         }
 
-        bool declaration()
+        Production declaration()
         {
             if (declaration_specifiers())
             {
@@ -1407,7 +1446,7 @@ namespace SynAna
             return false;
         }
 
-        bool init_declarator_list()
+        Production init_declarator_list()
         {
             if (init_declarator())
                 if (init_declarator_list_line())
@@ -1416,7 +1455,7 @@ namespace SynAna
             return false;
         }
 
-        bool init_declarator_list_line()
+        Production init_declarator_list_line()
         {
             if (IsToken(Token.Comma))
             {
@@ -1431,7 +1470,7 @@ namespace SynAna
             return true;
         }
 
-        bool init_declarator()
+        Production init_declarator()
         {
             if (declarator())
             {
@@ -1450,7 +1489,7 @@ namespace SynAna
             return false;
         }
 
-        bool initializer()
+        Production initializer()
         {
             if (assignment_expression())
                 return true;
@@ -1485,7 +1524,7 @@ namespace SynAna
             return false;
         }
 
-        bool initializer_list()
+        Production initializer_list()
         {
             if (initializer())
                 if (initializer_list_line())
@@ -1494,7 +1533,7 @@ namespace SynAna
             return false;
         }
 
-        bool initializer_list_line()
+        Production initializer_list_line()
         {
             if (IsToken(Token.Comma))
             {
@@ -1509,92 +1548,83 @@ namespace SynAna
             return true;
         }
 
-        bool statement_list()
+        Production statement_list(string escapeLabel)
         {
-            if (statement())
-            {
-                if (statement_list())
-                    return true;
+            Code code = new();
 
-                return true;
+            var stat = statement(escapeLabel);
+
+            if (stat)
+            {
+                code += stat.Code;
+
+                var statList = statement_list(escapeLabel);
+
+                if (statList)
+                    code += statList.Code;
+
+                return new(code, true);
             }
 
             return false;
         }
 
-        bool statement()
+        Production statement(string escapeLabel = null)
         {
+            var code = string.Empty;
+
             var pos = SetPosition();
 
-            if (labeled_statement())
-                return true;
+            Production result = compound_statement(escapeLabel);
 
-            RetrievePosition(pos);
-
-            if (compound_statement())
-                return true;
-
-            RetrievePosition(pos);
-
-            if (expression_statement())
-                return true;
-
-            RetrievePosition(pos);
-
-            if (selection_statement())
-                return true;
-
-            RetrievePosition(pos);
-
-            if (iteration_statement())
-                return true;
-
-            RetrievePosition(pos);
-
-            if (jump_statement())
-                return true;
-
-
-            return false;
-        }
-
-        bool labeled_statement()
-        {
-            if (IsToken(Token.Case))
+            if (result)
             {
-                ReadToken();
+                code += result.Code;
 
-                if (logical_or_expression())
-                {
-                    if (IsToken(Token.Collon))
-                    {
-                        ReadToken();
-
-                        if (statement())
-                            return true;
-
-                    }
-                }
-
+                return new(code, true);
             }
 
-            else if (IsToken(Token.Default))
+            RetrievePosition(pos);
+            code = string.Empty;
+
+            result = expression_statement();
+
+            if (result)
             {
-                ReadToken();
+                code += result.Code;
 
-                if (IsToken(Token.Collon))
-                {
-                    ReadToken();
+                return new(code, true);
+            }
 
-                    if (statement())
-                        return true;
-                }
+            RetrievePosition(pos);
+            code = string.Empty;
+
+            result = selection_statement();
+
+            if (result)
+            {
+                code += result.Code;
+
+                return new(code, true);
+            }
+
+            RetrievePosition(pos);
+            code = string.Empty;
+
+            result = jump_statement(escapeLabel);
+
+            if (result)
+            {
+                code += result.Code;
+
+                return new(code, true);
             }
 
             return false;
         }
 
-        bool expression_statement()
+
+        Production expression_statement()
         {
             if (IsToken(Token.SemiCollon))
             {
@@ -1614,53 +1644,66 @@ namespace SynAna
             return false;
         }
 
-        bool selection_statement()
+        Production selection_statement()
         {
-            if (IsToken(Token.If))
+            if (IsToken(Token.Switch))
             {
+                var escapeLabel = CreateLabel("escape");
+
+                Code code = new();
+
                 ReadToken();
 
-                if (expression_statement_structure())
+                Production exp = expression_statement_structure(escapeLabel);
+
+                if (exp)
                 {
-                    if (IsToken(Token.Else))
-                    {
-                        ReadToken();
+                    code += exp.Code;
+                    code += $"{escapeLabel}:";
 
-                        if (statement())
-                            return true;
-                    }
-                    else
-                        return true;
+                    return new(code, true);
                 }
-
-            }
-
-            else if (IsToken(Token.Switch))
-            {
-                ReadToken();
-
-                if (expression_statement_structure())
-                    return true;
             }
 
             return false;
         }
 
-        bool expression_statement_structure()
+
+        Dictionary<string, int> labels = new();
+
+        private string CreateLabel(string v)
+        {
+            if (!labels.ContainsKey(v))
+                labels.Add(v, 0);
+
+            return $"{v}_{labels[v]++}";
+        }
+
+        static int tempCount = 0;
+
+        private string CreateTemp()
+        {
+            return $"t{tempCount++}";
+        }
+
+        Production expression_statement_structure(string escapeLabel)
         {
             if (IsToken(Token.ParenthesisOpen))
             {
                 ReadToken();
 
-                if (expression())
+                var exp = expression();
+
+                if (exp)
                 {
                     if (IsToken(Token.ParenthesisClose))
                     {
                         ReadToken();
 
-                        if (statement())
-                            return true;
+                        var stat = labeled_block(escapeLabel, exp.Place);
 
+                        if (stat)
+                            return stat;
                     }
                 }
 
@@ -1669,130 +1712,128 @@ namespace SynAna
             return false;
         }
 
-        bool iteration_statement()
+        Production labeled_block(string escapeLabel, string valueToCompare)
         {
-            if (IsToken(Token.While))
+            if (IsToken(Token.BraceOpen))
             {
                 ReadToken();
 
-                if (expression_statement_structure())
-                    return true;
+                var labeledList = labeled_statement_list(escapeLabel, valueToCompare);
 
-            }
-            else if (IsToken(Token.Do))
-            {
-                ReadToken();
-
-                if (statement())
+                if (labeledList)
                 {
-                    if (IsToken(Token.While))
+                    if (IsToken(Token.BraceClose))
                     {
                         ReadToken();
 
-                        if (IsToken(Token.ParenthesisOpen))
+                        return labeledList;
+                    }
+                }
+            }
+            return false;
+        }
+
+        Production labeled_statement_list(string escapeLabel, string valueToCompare)
+        {
+            Code code = new();
+
+            var stat = labeled_statement(escapeLabel, valueToCompare);
+
+            if (stat)
+            {
+                code += stat.Code;
+
+                var statList = labeled_statement_list(escapeLabel, valueToCompare);
+
+                if (statList)
+                    code += statList.Code;
+
+                return new(code, true);
+            }
+
+            return false;
+        }
+
+        Production labeled_statement(string escapeLabel, string valueToCompare)
+        {
+            Code code = new();
+
+            if (IsToken(Token.Case))
+            {
+                var nextCaseLabel = CreateLabel("next");
+
+                ReadToken();
+
+                Production expression = logical_or_expression();
+
+                var temp = CreateTemp();
+
+                code += $"{temp} = {valueToCompare} == {expression.Place}";
+
+                if (expression)
+                {
+                    code += $"goFalse {temp} {nextCaseLabel}";
+
+                    if (IsToken(Token.Collon))
+                    {
+                        ReadToken();
+
+                        var stat = statement(escapeLabel);
+
+                        if (stat)
                         {
-                            ReadToken();
+                            code += stat.Code;
 
-                            if (expression())
-                            {
-                                if (IsToken(Token.ParenthesisClose))
-                                {
-                                    ReadToken();
+                            code += $"{nextCaseLabel}:";
 
-                                    if (IsToken(Token.SemiCollon))
-                                    {
-                                        ReadToken();
-                                        return true;
-                                    }
-
-                                }
-                            }
-
+                            return new(code, true);
                         }
-
                     }
                 }
 
             }
-            else if (IsToken(Token.For))
+
+            else if (IsToken(Token.Default))
             {
                 ReadToken();
 
-                if (IsToken(Token.ParenthesisOpen))
+                if (IsToken(Token.Collon))
                 {
                     ReadToken();
 
-                    if (expression_statement())
+                    var stat = statement(escapeLabel);
+
+                    if (stat)
                     {
-                        if (expression_statement())
-                        {
-                            if (expression())
-                            {
-                                if (IsToken(Token.ParenthesisClose))
-                                {
-                                    ReadToken();
+                        var defaultLabel = CreateLabel("default");
 
-                                    if (statement())
-                                        return true;
+                        code += $"{defaultLabel}:";
 
-                                }
-                            }
-                            else if (IsToken(Token.ParenthesisClose))
-                            {
-                                ReadToken();
+                        code += stat.Code;
 
-                                if (statement())
-                                    return true;
-
-
-                            }
-                        }
+                        return new(code, true);
                     }
-
                 }
             }
 
             return false;
         }
 
-        bool jump_statement()
+        Production jump_statement(string labelToReturn)
         {
-            if (IsToken(Token.Continue))
+            if (IsToken(Token.Break))
             {
+                string code = null;
+
                 ReadToken();
 
                 if (IsToken(Token.SemiCollon))
                 {
                     ReadToken();
-                    return true;
-                }
 
-            }
-            else if (IsToken(Token.Break))
-            {
-                ReadToken();
+                    code = $"go {labelToReturn};";
 
-                if (IsToken(Token.SemiCollon))
-                {
-                    ReadToken();
-                    return true;
-                }
-            }
-            else if (IsToken(Token.Return))
-            {
-                ReadToken();
-                if (IsToken(Token.SemiCollon))
-                {
-                    ReadToken();
-                    return true;
-                }
-                else if (expression())
-                {
-                    if (IsToken(Token.SemiCollon))
-                    {
-                        ReadToken();
-                        return true;
-                    }
+                    return new Production(code, true);
                 }
             }
 
