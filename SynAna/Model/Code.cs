@@ -20,16 +20,22 @@
         public static Code operator +(Code one, Code two) =>
             string.IsNullOrEmpty(one)
             ? two
+            : string.IsNullOrEmpty(two)
+            ? one
             : new($"{one}\n{two}");
 
         public static Code operator +(Code one, string two) =>
             string.IsNullOrEmpty(one)
             ? two
+            : string.IsNullOrEmpty(two)
+            ? one
             : new($"{one}\n{two}");
 
         public static Code operator +(Code one, Production two) =>
             string.IsNullOrEmpty(one)
             ? two.Code
+            : string.IsNullOrEmpty(two.Code)
+            ? one
             : new($"{one}\n{two.Code}");
 
         public override string ToString() => _content;

@@ -544,7 +544,7 @@ namespace SynAna
                 }
             }
 
-            return leftSide;
+            return new(string.Empty, leftSide.Place, true);
         }
 
         Production logical_and_expression()
@@ -594,7 +594,7 @@ namespace SynAna
                 }
             }
 
-            return leftSide;
+            return new(string.Empty, leftSide.Place, true);
         }
 
         Production inclusive_or_expression()
@@ -644,7 +644,7 @@ namespace SynAna
                 }
             }
 
-            return leftSide;
+            return new(string.Empty, leftSide.Place, true);
         }
 
         Production exclusive_or_expression()
@@ -694,7 +694,7 @@ namespace SynAna
                 }
             }
 
-            return leftSide;
+            return new(string.Empty, leftSide.Place, true);
         }
 
         Production and_expression()
@@ -745,7 +745,7 @@ namespace SynAna
                 }
             }
 
-            return leftSide;
+            return new(string.Empty, leftSide.Place, true);
         }
 
         Production equality_expression()
@@ -819,7 +819,7 @@ namespace SynAna
                 }
             }
 
-            return leftSide;
+            return new(string.Empty, leftSide.Place, true);
         }
 
         Production relational_expression()
@@ -939,7 +939,7 @@ namespace SynAna
                 }
             }
 
-            return leftSide;
+            return new(string.Empty, leftSide.Place, true);
         }
 
         Production shift_expression()
@@ -1014,7 +1014,7 @@ namespace SynAna
                 }
             }
 
-            return leftSide;
+            return new(string.Empty, leftSide.Place, true);
         }
 
         Production additive_expression()
@@ -1088,7 +1088,7 @@ namespace SynAna
                 }
             }
 
-            return leftSide;
+            return new(string.Empty, leftSide.Place, true);
         }
 
         Production multiplicative_expression()
@@ -1249,7 +1249,7 @@ namespace SynAna
                         ReadToken();
 
                         if (postfix_expression_line(leftSide))
-                            return leftSide;
+                            return new(string.Empty, leftSide.Place, true);
 
                     }
                 }
@@ -1259,7 +1259,7 @@ namespace SynAna
                     ReadToken();
 
                     if (postfix_expression_line(leftSide))
-                        return leftSide;
+                        return new(string.Empty, leftSide.Place, true);
 
                 }
 
@@ -1274,7 +1274,7 @@ namespace SynAna
                     ReadToken();
 
                     if (postfix_expression_line(leftSide))
-                        return leftSide;
+                        return new(string.Empty, leftSide.Place, true);
                 }
             }
 
@@ -1287,7 +1287,7 @@ namespace SynAna
                     ReadToken();
 
                     if (postfix_expression_line(leftSide))
-                        return leftSide;
+                        return new(string.Empty, leftSide.Place, true);
 
                 }
             }
@@ -1299,7 +1299,7 @@ namespace SynAna
                 ReadToken();
 
                 if (postfix_expression_line(leftSide))
-                    return leftSide;
+                    return new(string.Empty, leftSide.Place, true);
             }
 
             else if (IsToken(Token.Decrement))
@@ -1307,7 +1307,7 @@ namespace SynAna
                 ReadToken();
 
                 if (postfix_expression_line(leftSide))
-                    return leftSide;
+                    return new(string.Empty, leftSide.Place, true);
             }
 
             return true;
@@ -1423,7 +1423,7 @@ namespace SynAna
                 }
             }
 
-            return leftSide;
+            return new(string.Empty, leftSide.Place, true);
         }
 
         Production assignment_expression()
@@ -1448,12 +1448,11 @@ namespace SynAna
 
                     if (rightSideExp)
                     {
-                        Code code = $"{unaryExp.Place} = {rightSideExp.Place};";
-
                         expCode += rightSideExp.Code;
-                        expCode += code;
+                    
+                        expCode += $"(* {unaryExp.Place}) = {rightSideExp.Place};";
 
-                        return new(unaryExp.Place, expCode, true);
+                        return new(expCode, unaryExp.Place, true);
                     }
 
                     else
@@ -1470,7 +1469,7 @@ namespace SynAna
                             expCode += rightLogicalOrExp.Code;
                             expCode += code;
 
-                            return new(unaryExp.Place, expCode, true);
+                            return new(expCode, unaryExp.Place, true);
                         }
                     }
                 }
@@ -1787,7 +1786,7 @@ namespace SynAna
             return true;
         }
 
-        Production compound_statement(string escapeLabel = null)
+        Production compound_statement(string escapeLabel = null, string valueToCompare = null)
         {
             if (IsToken(Token.BraceOpen))
             {
@@ -1800,7 +1799,7 @@ namespace SynAna
                     return true;
                 }
 
-                Production compoundBody = compound_body_list(escapeLabel);
+                Production compoundBody = compound_body_list(escapeLabel, valueToCompare);
 
                 if (compoundBody)
                 {
@@ -1818,17 +1817,17 @@ namespace SynAna
             return false;
         }
 
-        Production compound_body_list(string escapeLabel)
+        Production compound_body_list(string escapeLabel, string valueToCompare)
         {
             var code = new Code();
 
-            Production body = compound_body(escapeLabel);
+            Production body = compound_body(escapeLabel, valueToCompare);
 
             if (body)
             {
                 code += body.Code;
 
-                var list = compound_body_list(escapeLabel);
+                var list = compound_body_list(escapeLabel, valueToCompare);
 
                 if (list)
                     code += list.Code;
@@ -1840,14 +1839,14 @@ namespace SynAna
             return false;
         }
 
-        Production compound_body(string escapeLabel)
+        Production compound_body(string escapeLabel, string valueToCompare)
         {
             var code = new Code();
 
             if (declaration_list())
                 return true;
 
-            var stat = statement_list(escapeLabel);
+            var stat = statement_list(escapeLabel, valueToCompare);
 
             if (stat)
             {
@@ -1998,17 +1997,17 @@ namespace SynAna
             return true;
         }
 
-        Production statement_list(string escapeLabel)
+        Production statement_list(string escapeLabel, string valueToCompare)
         {
             Code code = new();
 
-            var stat = statement(escapeLabel);
+            var stat = statement(escapeLabel, valueToCompare);
 
             if (stat)
             {
                 code += stat.Code;
 
-                var statList = statement_list(escapeLabel);
+                var statList = statement_list(escapeLabel, valueToCompare);
 
                 if (statList)
                     code += statList.Code;
@@ -2025,7 +2024,7 @@ namespace SynAna
 
             var pos = SetPosition();
 
-            Production result = compound_statement(escapeLabel);
+            Production result = compound_statement(escapeLabel, exp);
 
             if (result)
             {
@@ -2093,13 +2092,12 @@ namespace SynAna
                 ReadToken();
                 return true;
             }
-
-            else if (expression())
+            else if (expression() is Production exp && exp.Valid)
             {
                 if (IsToken(Token.SemiCollon))
                 {
                     ReadToken();
-                    return true;
+                    return exp;
                 }
             }
 
@@ -2173,48 +2171,6 @@ namespace SynAna
 
             return false;
         }
-
-        //Production labeled_block(string escapeLabel, string valueToCompare)
-        //{
-        //    if (IsToken(Token.BraceOpen))
-        //    {
-        //        ReadToken();
-
-        //        var labeledList = labeled_statement_list(escapeLabel, valueToCompare);
-
-        //        if (labeledList)
-        //        {
-        //            if (IsToken(Token.BraceClose))
-        //            {
-        //                ReadToken();
-
-        //                return labeledList;
-        //            }
-        //        }
-        //    }
-        //    return false;
-        //}
-
-        //Production labeled_statement_list(string escapeLabel, string valueToCompare)
-        //{
-        //    Code code = new();
-
-        //    var stat = labeled_statement(escapeLabel, valueToCompare);
-
-        //    if (stat)
-        //    {
-        //        code += stat.Code;
-
-        //        var statList = labeled_statement_list(escapeLabel, valueToCompare);
-
-        //        if (statList)
-        //            code += statList.Code;
-
-        //        return new(code, true);
-        //    }
-
-        //    return false;
-        //}
 
         Production labeled_statement(string escapeLabel, string valueToCompare)
         {
