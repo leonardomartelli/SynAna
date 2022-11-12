@@ -27,6 +27,11 @@
             ? two
             : new($"{one}\n{two}");
 
+        public static Code operator +(Code one, Production two) =>
+            string.IsNullOrEmpty(one)
+            ? two.Code
+            : new($"{one}\n{two.Code}");
+
         public override string ToString() => _content;
     }
 }

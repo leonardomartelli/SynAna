@@ -419,7 +419,6 @@ namespace SynAna
 
                         if (direct_declarator_line())
                             return true;
-
                     }
                 }
             }
@@ -499,362 +498,745 @@ namespace SynAna
 
         Production logical_or_expression()
         {
-            if (logical_and_expression())
-                if (logical_or_expression_line())
-                    return true;
+            Production logicalAndExp = logical_and_expression(); //left side
+
+            if (logicalAndExp)
+            {
+                Code code = new();
+
+                code += logicalAndExp.Code;
+
+                Production logicalOrLine = logical_or_expression_line(logicalAndExp);
+
+                if (logicalOrLine)
+                {
+                    code += logicalOrLine.Code;
+
+                    return new(code, logicalOrLine.Place, true);
+                }
+            }
 
             return false;
         }
 
-        Production logical_or_expression_line()
+        Production logical_or_expression_line(Production leftSide)
         {
             if (IsToken(Token.LogicalOr))
             {
+                Code code = new();
+
                 ReadToken();
 
-                if (logical_and_expression())
-                    if (logical_or_expression_line())
-                        return true;
+                Production rightSide = logical_and_expression();
 
+                if (rightSide)
+                {
+                    code += rightSide;
+
+                    var place = CreateTemp();
+
+                    code += $"{place} = {leftSide.Place} || {rightSide.Place}";
+
+                    Production logicalOrLine = logical_or_expression_line(new(code, place, true));
+
+                    if (logicalOrLine)
+                        return logicalOrLine;
+                }
             }
 
-            return true;
+            return leftSide;
         }
 
         Production logical_and_expression()
         {
-            if (inclusive_or_expression())
-                if (logical_and_expression_line())
-                    return true;
+            Production leftSide = inclusive_or_expression(); //left side
+
+            if (leftSide)
+            {
+                Code code = new();
+
+                code += leftSide.Code;
+
+                Production exp = logical_and_expression_line(leftSide);
+
+                if (exp)
+                {
+                    code += exp.Code;
+
+                    return new(code, exp.Place, true);
+                }
+            }
 
             return false;
         }
 
-        Production logical_and_expression_line()
+        Production logical_and_expression_line(Production leftSide)
         {
             if (IsToken(Token.LogicalAnd))
             {
+                Code code = new();
+
                 ReadToken();
 
-                if (inclusive_or_expression())
-                    if (logical_and_expression_line())
-                        return true;
+                Production rightSide = inclusive_or_expression();
 
+                if (rightSide)
+                {
+                    code += rightSide;
+
+                    var place = CreateTemp();
+                    code += $"{place} = {leftSide.Place} && {rightSide.Place}";
+
+                    Production expLine = logical_and_expression_line(new(code, place, true));
+
+                    if (expLine)
+                        return expLine;
+                }
             }
 
-            return true;
+            return leftSide;
         }
 
         Production inclusive_or_expression()
         {
-            if (exclusive_or_expression())
-                if (inclusive_or_expression_line())
-                    return true;
+            Production leftSide = exclusive_or_expression(); //left side
+
+            if (leftSide)
+            {
+                Code code = new();
+
+                code += leftSide.Code;
+
+                Production exp = inclusive_or_expression_line(leftSide);
+
+                if (exp)
+                {
+                    code += exp.Code;
+
+                    return new(code, exp.Place, true);
+                }
+            }
 
             return false;
         }
 
-        Production inclusive_or_expression_line()
+        Production inclusive_or_expression_line(Production leftSide)
         {
             if (IsToken(Token.Or))
             {
+                Code code = new();
+
                 ReadToken();
 
-                if (exclusive_or_expression())
-                    if (inclusive_or_expression_line())
-                        return true;
+                Production rightSide = exclusive_or_expression();
 
+                if (rightSide)
+                {
+                    code += rightSide;
+
+                    var place = CreateTemp();
+                    code += $"{place} = {leftSide.Place} | {rightSide.Place}";
+
+                    Production expLine = inclusive_or_expression_line(new(code, place, true));
+
+                    if (expLine)
+                        return expLine;
+                }
             }
 
-            return true;
+            return leftSide;
         }
 
         Production exclusive_or_expression()
         {
-            if (and_expression())
-                if (exclusive_or_expression_line())
-                    return true;
+            Production leftSide = and_expression(); //left side
+
+            if (leftSide)
+            {
+                Code code = new();
+
+                code += leftSide.Code;
+
+                Production exp = exclusive_or_expression_line(leftSide);
+
+                if (exp)
+                {
+                    code += exp.Code;
+
+                    return new(code, exp.Place, true);
+                }
+            }
 
             return false;
         }
 
-        Production exclusive_or_expression_line()
+        Production exclusive_or_expression_line(Production leftSide)
         {
             if (IsToken(Token.Xor))
             {
+                Code code = new();
+
                 ReadToken();
 
-                if (and_expression())
-                    if (exclusive_or_expression_line())
-                        return true;
+                Production rightSide = and_expression();
 
+                if (rightSide)
+                {
+                    code += rightSide;
+
+                    var place = CreateTemp();
+                    code += $"{place} = {leftSide.Place} ^ {rightSide.Place}";
+
+                    Production expLine = exclusive_or_expression_line(new(code, place, true));
+
+                    if (expLine)
+                        return expLine;
+                }
             }
 
-            return true;
+            return leftSide;
         }
 
         Production and_expression()
         {
-            if (equality_expression())
-                if (and_expression_line())
-                    return true;
+            Production leftSide = equality_expression(); //left side
+
+            if (leftSide)
+            {
+                Code code = new();
+
+                code += leftSide.Code;
+
+                Production exp = and_expression_line(leftSide);
+
+                if (exp)
+                {
+                    code += exp.Code;
+
+                    return new(code, exp.Place, true);
+                }
+            }
 
             return false;
         }
 
-        Production and_expression_line()
+        Production and_expression_line(Production leftSide)
         {
             if (IsToken(Token.And))
             {
+                Code code = new();
+
                 ReadToken();
 
-                if (equality_expression())
-                    if (and_expression_line())
-                        return true;
+                Production rightSide = equality_expression();
+
+                if (rightSide)
+                {
+                    code += rightSide;
+
+                    var place = CreateTemp();
+
+                    code += $"{place} = {leftSide.Place} & {rightSide.Place}";
+
+                    Production expLine = and_expression_line(new(code, place, true));
+
+                    if (expLine)
+                        return expLine;
+                }
             }
 
-            return true;
+            return leftSide;
         }
 
         Production equality_expression()
         {
-            if (relational_expression())
-                if (equality_expression_line())
-                    return true;
+            Production leftSide = relational_expression(); //left side
+
+            if (leftSide)
+            {
+                Code code = new();
+
+                code += leftSide.Code;
+
+                Production exp = equality_expression_line(leftSide);
+
+                if (exp)
+                {
+                    code += exp.Code;
+
+                    return new(code, exp.Place, true);
+                }
+            }
 
             return false;
         }
 
-        Production equality_expression_line()
+        Production equality_expression_line(Production leftSide)
         {
             if (IsToken(Token.Equals))
             {
+                Code code = new();
+
                 ReadToken();
 
-                if (relational_expression())
-                    if (equality_expression_line())
-                        return true;
+                Production rightSide = relational_expression();
 
+                if (rightSide)
+                {
+                    code += rightSide;
+
+                    var place = CreateTemp();
+
+                    code += $"{place} = {leftSide.Place} == {rightSide.Place}";
+
+                    Production expLine = equality_expression_line(new(code, place, true));
+
+                    if (expLine)
+                        return expLine;
+                }
             }
 
             else if (IsToken(Token.NotEquals))
             {
+                Code code = new();
+
                 ReadToken();
 
-                if (relational_expression())
-                    if (equality_expression_line())
-                        return true;
+                Production rightSide = relational_expression();
 
+                if (rightSide)
+                {
+                    code += rightSide;
+
+                    var place = CreateTemp();
+
+                    code += $"{place} = {leftSide.Place} != {rightSide.Place}";
+
+                    Production expLine = equality_expression_line(new(code, place, true));
+
+                    if (expLine)
+                        return expLine;
+                }
             }
-            return true;
+
+            return leftSide;
         }
 
         Production relational_expression()
         {
-            if (shift_expression())
-                if (relational_expression_line())
-                    return true;
+            Production leftSide = shift_expression(); //left side
+
+            if (leftSide)
+            {
+                Code code = new();
+
+                code += leftSide.Code;
+
+                Production exp = relational_expression_line(leftSide);
+
+                if (exp)
+                {
+                    code += exp.Code;
+
+                    return new(code, exp.Place, true);
+                }
+            }
 
             return false;
         }
 
-        Production relational_expression_line()
+        Production relational_expression_line(Production leftSide)
         {
             if (IsToken(Token.Less))
             {
+                Code code = new();
+
                 ReadToken();
 
-                if (shift_expression())
-                    if (relational_expression_line())
-                        return true;
+                Production rightSide = shift_expression();
 
+                if (rightSide)
+                {
+                    code += rightSide;
+
+                    var place = CreateTemp();
+
+                    code += $"{place} = {leftSide.Place} < {rightSide.Place}";
+
+                    Production expLine = relational_expression_line(new(code, place, true));
+
+                    if (expLine)
+                        return expLine;
+                }
             }
 
             else if (IsToken(Token.Greater))
             {
+                Code code = new();
+
                 ReadToken();
 
-                if (shift_expression())
-                    if (relational_expression_line())
-                        return true;
+                Production rightSide = shift_expression();
 
+                if (rightSide)
+                {
+                    code += rightSide;
+
+                    var place = CreateTemp();
+
+                    code += $"{place} = {leftSide.Place} > {rightSide.Place}";
+
+                    Production expLine = relational_expression_line(new(code, place, true));
+
+                    if (expLine)
+                        return expLine;
+                }
             }
 
             else if (IsToken(Token.LessOrEqual))
             {
+                Code code = new();
+
                 ReadToken();
 
-                if (shift_expression())
-                    if (relational_expression_line())
-                        return true;
+                Production rightSide = shift_expression();
 
+                if (rightSide)
+                {
+                    code += rightSide;
+
+                    var place = CreateTemp();
+
+                    code += $"{place} = {leftSide.Place} <= {rightSide.Place}";
+
+                    Production expLine = relational_expression_line(new(code, place, true));
+
+                    if (expLine)
+                        return expLine;
+                }
             }
 
             else if (IsToken(Token.GreaterOrEqual))
             {
+                Code code = new();
+
                 ReadToken();
 
-                if (shift_expression())
-                    if (relational_expression_line())
-                        return true;
+                Production rightSide = shift_expression();
 
+                if (rightSide)
+                {
+                    code += rightSide;
+
+                    var place = CreateTemp();
+
+                    code += $"{place} = {leftSide.Place} >= {rightSide.Place}";
+
+                    Production expLine = relational_expression_line(new(code, place, true));
+
+                    if (expLine)
+                        return expLine;
+                }
             }
 
-            return true;
+            return leftSide;
         }
 
         Production shift_expression()
         {
-            if (additive_expression())
-                if (shift_expression_line())
-                    return true;
+            Production leftSide = additive_expression(); //left side
+
+            if (leftSide)
+            {
+                Code code = new();
+
+                code += leftSide.Code;
+
+                Production exp = shift_expression_line(leftSide);
+
+                if (exp)
+                {
+                    code += exp.Code;
+
+                    return new(code, exp.Place, true);
+                }
+            }
 
             return false;
         }
 
-        Production shift_expression_line()
+        Production shift_expression_line(Production leftSide)
         {
             if (IsToken(Token.ShiftLeft))
             {
+                Code code = new();
+
                 ReadToken();
 
-                if (additive_expression())
-                    if (shift_expression_line())
-                        return true;
+                Production rightSide = additive_expression();
 
+                if (rightSide)
+                {
+                    code += rightSide;
+
+                    var place = CreateTemp();
+
+                    code += $"{place} = {leftSide.Place} << {rightSide.Place}";
+
+                    Production expLine = shift_expression_line(new(code, place, true));
+
+                    if (expLine)
+                        return expLine;
+                }
             }
 
-            else if (IsToken(Token.ShiftRight))
+
+            else if(IsToken(Token.ShiftRight))
             {
+                Code code = new();
+
                 ReadToken();
 
-                if (additive_expression())
-                    if (shift_expression_line())
-                        return true;
+                Production rightSide = additive_expression();
 
+                if (rightSide)
+                {
+                    code += rightSide;
+
+                    var place = CreateTemp();
+
+                    code += $"{place} = {leftSide.Place} >> {rightSide.Place}";
+
+                    Production expLine = shift_expression_line(new(code, place, true));
+
+                    if (expLine)
+                        return expLine;
+                }
             }
 
-            return true;
+            return leftSide;
         }
 
         Production additive_expression()
         {
-            if (multiplicative_expression())
-                if (additive_expression_line())
-                    return true;
+            Production leftSide = multiplicative_expression(); //left side
+
+            if (leftSide)
+            {
+                Code code = new();
+
+                code += leftSide.Code;
+
+                Production exp = additive_expression_line(leftSide);
+
+                if (exp)
+                {
+                    code += exp.Code;
+
+                    return new(code, exp.Place, true);
+                }
+            }
 
             return false;
         }
 
-        Production additive_expression_line()
+        Production additive_expression_line(Production leftSide)
         {
             if (IsToken(Token.Plus))
             {
+                Code code = new();
+
                 ReadToken();
 
-                if (multiplicative_expression())
-                    if (additive_expression_line())
-                        return true;
+                Production rightSide = multiplicative_expression();
 
+                if (rightSide)
+                {
+                    code += rightSide;
 
+                    var place = CreateTemp();
+
+                    code += $"{place} = {leftSide.Place} + {rightSide.Place}";
+
+                    Production expLine = additive_expression_line(new(code, place, true));
+
+                    if (expLine)
+                        return expLine;
+                }
             }
+
             else if (IsToken(Token.Minus))
             {
+                Code code = new();
+
                 ReadToken();
 
-                if (multiplicative_expression())
-                    if (additive_expression_line())
-                        return true;
+                Production rightSide = multiplicative_expression();
 
+                if (rightSide)
+                {
+                    code += rightSide;
+
+                    var place = CreateTemp();
+
+                    code += $"{place} = {leftSide.Place} - {rightSide.Place}";
+
+                    Production expLine = additive_expression_line(new(code, place, true));
+
+                    if (expLine)
+                        return expLine;
+                }
             }
 
-            return true;
+            return leftSide;
         }
 
         Production multiplicative_expression()
         {
+            Production leftSide = unary_expression(); //left side
 
-            if (unary_expression())
-                if (multiplicative_expression_line())
-                    return true;
+            if (leftSide)
+            {
+                Code code = new();
 
+                code += leftSide.Code;
+
+                Production exp = multiplicative_expression_line(leftSide);
+
+                if (exp)
+                {
+                    code += exp.Code;
+
+                    return new(code, exp.Place, true);
+                }
+            }
 
             return false;
         }
 
-        Production multiplicative_expression_line()
+        Production multiplicative_expression_line(Production leftSide)
         {
             if (IsToken(Token.Product))
             {
+                Code code = new();
+
                 ReadToken();
 
-                if (unary_expression())
-                    if (multiplicative_expression_line())
-                        return true;
+                Production rightSide = unary_expression();
 
+                if (rightSide)
+                {
+                    code += rightSide;
+
+                    var place = CreateTemp();
+
+                    code += $"{place} = {leftSide.Place} * {rightSide.Place}";
+
+                    Production expLine = multiplicative_expression_line(new(code, place, true));
+
+                    if (expLine)
+                        return expLine;
+                }
             }
 
             else if (IsToken(Token.Division))
             {
+                Code code = new();
+
                 ReadToken();
 
-                if (unary_expression())
-                    if (multiplicative_expression_line())
-                        return true;
+                Production rightSide = unary_expression();
 
+                if (rightSide)
+                {
+                    code += rightSide;
+
+                    var place = CreateTemp();
+
+                    code += $"{place} = {leftSide.Place} / {rightSide.Place}";
+
+                    Production expLine = multiplicative_expression_line(new(code, place, true));
+
+                    if (expLine)
+                        return expLine;
+                }
             }
+
 
             else if (IsToken(Token.Module))
             {
+                Code code = new();
+
                 ReadToken();
 
-                if (unary_expression())
-                    if (multiplicative_expression_line())
-                        return true;
+                Production rightSide = unary_expression();
 
+                if (rightSide)
+                {
+                    code += rightSide;
+
+                    var place = CreateTemp();
+
+                    code += $"{place} = {leftSide.Place} % {rightSide.Place}";
+
+                    Production expLine = multiplicative_expression_line(new(code, place, true));
+
+                    if (expLine)
+                        return expLine;
+                }
             }
 
-            return true;
+            return new(string.Empty, leftSide.Place, true);
         }
 
         Production unary_expression()
         {
-            if (postfix_expression())
-                return true;
+            Production postFix_exp = postfix_expression();
+
+            if (postFix_exp)
+                return postFix_exp;
 
             if (IsToken(Token.Increment))
             {
                 ReadToken();
 
-                if (unary_expression())
-                    return true;
+                Production postFixExp = unary_expression();
+                if (postFixExp)
+                    return postFixExp;
             }
 
             if (IsToken(Token.Decrement))
             {
                 ReadToken();
 
-                if (unary_expression())
-                    return true;
+                Production postFixExp = unary_expression();
+                if (postFixExp)
+                    return postFixExp;
             }
 
             if (unary_operator())
-                if (unary_expression())
-                    return true;
+            {
+                Production postFixExp = unary_expression();
+
+                if (postFixExp)
+                    return postFixExp;
+            }
 
             return false;
         }
 
         Production postfix_expression()
         {
-            if (primary_expression())
-                if (postfix_expression_line())
-                    return true;
+            Production leftSide = primary_expression();
+
+            if (leftSide)
+                if (postfix_expression_line(leftSide))
+                    return leftSide;
 
             return false;
         }
 
-        Production postfix_expression_line()
+        Production postfix_expression_line(Production leftSide)
         {
             if (IsToken(Token.ParenthesisOpen))
             {
@@ -866,8 +1248,8 @@ namespace SynAna
                     {
                         ReadToken();
 
-                        if (postfix_expression_line())
-                            return true;
+                        if (postfix_expression_line(leftSide))
+                            return leftSide;
 
                     }
                 }
@@ -876,8 +1258,8 @@ namespace SynAna
                 {
                     ReadToken();
 
-                    if (postfix_expression_line())
-                        return true;
+                    if (postfix_expression_line(leftSide))
+                        return leftSide;
 
                 }
 
@@ -891,12 +1273,9 @@ namespace SynAna
                 {
                     ReadToken();
 
-                    if (postfix_expression_line())
-                        return true;
-
-
+                    if (postfix_expression_line(leftSide))
+                        return leftSide;
                 }
-
             }
 
             else if (IsToken(Token.StructAccessor))
@@ -907,31 +1286,28 @@ namespace SynAna
                 {
                     ReadToken();
 
-                    if (postfix_expression_line())
-                        return true;
+                    if (postfix_expression_line(leftSide))
+                        return leftSide;
 
                 }
-
             }
+
+            //TODO make increment
 
             else if (IsToken(Token.Increment))
             {
                 ReadToken();
 
-                if (postfix_expression_line())
-                    return true;
-
-
+                if (postfix_expression_line(leftSide))
+                    return leftSide;
             }
 
             else if (IsToken(Token.Decrement))
             {
                 ReadToken();
 
-                if (postfix_expression_line())
-                    return true;
-
-
+                if (postfix_expression_line(leftSide))
+                    return leftSide;
             }
 
             return true;
@@ -941,26 +1317,44 @@ namespace SynAna
         {
             if (IsToken(Token.Identifier))
             {
+                var currentIdentifier = _currentTokenResult.Lexical;
+
                 ReadToken();
-                return true;
+
+                return new(string.Empty, currentIdentifier, true);
             }
 
             if (IsToken(Token.IntegerConstant))
             {
+                var place = CreateTemp();
+
+                Code code = $"{place} = {_currentTokenResult.Lexical};";
+
                 ReadToken();
-                return true;
+
+                return new(code, place, true);
             }
 
             if (IsToken(Token.FloatingPointConstant))
             {
+                var place = CreateTemp();
+
+                Code code = $"{place} = {_currentTokenResult.Lexical};";
+
                 ReadToken();
-                return true;
+
+                return new(code, place, true);
             }
 
             if (IsToken(Token.CharConstant))
             {
+                var place = CreateTemp();
+
+                Code code = $"{place} = {_currentTokenResult.Lexical};";
+
                 ReadToken();
-                return true;
+
+                return new(code, place, true);
             }
 
             if (IsToken(Token.ParenthesisOpen))
@@ -975,7 +1369,6 @@ namespace SynAna
                         return true;
                     }
                 }
-
             }
 
             return false;
@@ -983,55 +1376,112 @@ namespace SynAna
 
         Production expression()
         {
-            if (assignment_expression())
-                if (expression_line())
-                    return true;
+
+            Production leftSide = assignment_expression(); //left side
+
+            if (leftSide)
+            {
+                Code code = new();
+
+                code += leftSide.Code;
+
+                Production exp = expression_line(leftSide);
+
+                if (exp)
+                {
+                    code += exp.Code;
+
+                    return new(code, exp.Place, true);
+                }
+            }
 
             return false;
         }
 
-        Production expression_line()
+        Production expression_line(Production leftSide)
         {
             if (IsToken(Token.Comma))
             {
+                Code code = new();
+
                 ReadToken();
 
-                if (assignment_expression())
-                    if (expression_line())
-                        return true;
+                Production rightSide = assignment_expression();
 
+                if (rightSide)
+                {
+                    code += rightSide;
+
+                    var place = CreateTemp();
+
+                    code += $"{place} = {leftSide.Place} , {rightSide.Place}";
+
+                    Production expLine = expression_line(new(code, place, true));
+
+                    if (expLine)
+                        return expLine;
+                }
             }
 
-            return true;
+            return leftSide;
         }
 
         Production assignment_expression()
         {
             var pos = SetPosition();
 
-            if (unary_expression())
+            Code expCode = new();
+
+            var unaryExp = unary_expression();
+
+            if (unaryExp)
             {
-                if (assignment_operator())
+                expCode += unaryExp.Code;
+
+                Production assignmentOperator = assignment_operator();
+
+                if (assignmentOperator)
                 {
                     var pos_assing = SetPosition();
 
-                    if (assignment_expression())
-                        return true;
+                    var rightSideExp = assignment_expression();
+
+                    if (rightSideExp)
+                    {
+                        Code code = $"{unaryExp.Place} = {rightSideExp.Place};";
+
+                        expCode += rightSideExp.Code;
+                        expCode += code;
+
+                        return new(unaryExp.Place, expCode, true);
+                    }
 
                     else
                     {
                         RetrievePosition(pos_assing);
 
-                        if (logical_or_expression())
-                            return true;
+                        Production rightLogicalOrExp = logical_or_expression();
+
+
+                        if (rightLogicalOrExp)
+                        {
+                            Code code = $"{unaryExp.Place} = {rightLogicalOrExp.Place};";
+
+                            expCode += rightLogicalOrExp.Code;
+                            expCode += code;
+
+                            return new(unaryExp.Place, expCode, true);
+                        }
                     }
                 }
             }
 
             RetrievePosition(pos);
 
-            if (logical_or_expression())
-                return true;
+            Production logicalOrExp = logical_or_expression();
+
+            if (logicalOrExp)
+                return logicalOrExp;
 
             return false;
         }
@@ -1569,7 +2019,7 @@ namespace SynAna
             return false;
         }
 
-        Production statement(string escapeLabel = null)
+        Production statement(string escapeLabel = null, string exp = null)
         {
             var code = string.Empty;
 
@@ -1620,6 +2070,18 @@ namespace SynAna
                 return new(code, true);
             }
 
+            RetrievePosition(pos);
+            code = string.Empty;
+
+            result = labeled_statement(escapeLabel, exp);
+
+            if (result)
+            {
+                code += result.Code;
+
+                return new(code, true);
+            }
+
             return false;
         }
 
@@ -1644,7 +2106,7 @@ namespace SynAna
             return false;
         }
 
-        Production selection_statement()
+        Production selection_statement() //tem que fazer suportar pelo statement()
         {
             if (IsToken(Token.Switch))
             {
@@ -1700,7 +2162,7 @@ namespace SynAna
                     {
                         ReadToken();
 
-                        var stat = labeled_block(escapeLabel, exp.Place);
+                        var stat = statement(escapeLabel, exp.Place);
 
                         if (stat)
                             return stat;
@@ -1712,47 +2174,47 @@ namespace SynAna
             return false;
         }
 
-        Production labeled_block(string escapeLabel, string valueToCompare)
-        {
-            if (IsToken(Token.BraceOpen))
-            {
-                ReadToken();
+        //Production labeled_block(string escapeLabel, string valueToCompare)
+        //{
+        //    if (IsToken(Token.BraceOpen))
+        //    {
+        //        ReadToken();
 
-                var labeledList = labeled_statement_list(escapeLabel, valueToCompare);
+        //        var labeledList = labeled_statement_list(escapeLabel, valueToCompare);
 
-                if (labeledList)
-                {
-                    if (IsToken(Token.BraceClose))
-                    {
-                        ReadToken();
+        //        if (labeledList)
+        //        {
+        //            if (IsToken(Token.BraceClose))
+        //            {
+        //                ReadToken();
 
-                        return labeledList;
-                    }
-                }
-            }
-            return false;
-        }
+        //                return labeledList;
+        //            }
+        //        }
+        //    }
+        //    return false;
+        //}
 
-        Production labeled_statement_list(string escapeLabel, string valueToCompare)
-        {
-            Code code = new();
+        //Production labeled_statement_list(string escapeLabel, string valueToCompare)
+        //{
+        //    Code code = new();
 
-            var stat = labeled_statement(escapeLabel, valueToCompare);
+        //    var stat = labeled_statement(escapeLabel, valueToCompare);
 
-            if (stat)
-            {
-                code += stat.Code;
+        //    if (stat)
+        //    {
+        //        code += stat.Code;
 
-                var statList = labeled_statement_list(escapeLabel, valueToCompare);
+        //        var statList = labeled_statement_list(escapeLabel, valueToCompare);
 
-                if (statList)
-                    code += statList.Code;
+        //        if (statList)
+        //            code += statList.Code;
 
-                return new(code, true);
-            }
+        //        return new(code, true);
+        //    }
 
-            return false;
-        }
+        //    return false;
+        //}
 
         Production labeled_statement(string escapeLabel, string valueToCompare)
         {
@@ -1767,6 +2229,8 @@ namespace SynAna
                 Production expression = logical_or_expression();
 
                 var temp = CreateTemp();
+
+                code += expression;
 
                 code += $"{temp} = {valueToCompare} == {expression.Place}";
 
