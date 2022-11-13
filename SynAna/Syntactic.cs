@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using SynAna.LexAna;
 
@@ -75,7 +76,7 @@ namespace SynAna
                 if (!external)
                     return false;
 
-                Console.Write(external.Code);
+                File.WriteAllText("result.asm", external.Code);
             }
 
             return true;
@@ -498,15 +499,15 @@ namespace SynAna
 
         Production logical_or_expression()
         {
-            Production logicalAndExp = logical_and_expression(); //left side
+            Production leftSide = logical_and_expression(); //left side
 
-            if (logicalAndExp)
+            if (leftSide)
             {
                 Code code = new();
 
-                code += logicalAndExp.Code;
 
-                Production logicalOrLine = logical_or_expression_line(logicalAndExp);
+
+                Production logicalOrLine = logical_or_expression_line(leftSide);
 
                 if (logicalOrLine)
                 {
@@ -531,11 +532,11 @@ namespace SynAna
 
                 if (rightSide)
                 {
-                    code += rightSide;
+                    code += leftSide; code += rightSide;
 
                     var place = CreateTemp();
 
-                    code += $"{place} = {leftSide.Place} || {rightSide.Place}";
+                    code += $"{place} = {leftSide.Place} || {rightSide.Place};";
 
                     Production logicalOrLine = logical_or_expression_line(new(code, place, true));
 
@@ -544,7 +545,7 @@ namespace SynAna
                 }
             }
 
-            return new(string.Empty, leftSide.Place, true);
+            return leftSide;
         }
 
         Production logical_and_expression()
@@ -555,7 +556,7 @@ namespace SynAna
             {
                 Code code = new();
 
-                code += leftSide.Code;
+
 
                 Production exp = logical_and_expression_line(leftSide);
 
@@ -582,10 +583,10 @@ namespace SynAna
 
                 if (rightSide)
                 {
-                    code += rightSide;
+                    code += leftSide; code += rightSide;
 
                     var place = CreateTemp();
-                    code += $"{place} = {leftSide.Place} && {rightSide.Place}";
+                    code += $"{place} = {leftSide.Place} && {rightSide.Place};";
 
                     Production expLine = logical_and_expression_line(new(code, place, true));
 
@@ -594,7 +595,7 @@ namespace SynAna
                 }
             }
 
-            return new(string.Empty, leftSide.Place, true);
+            return leftSide;
         }
 
         Production inclusive_or_expression()
@@ -605,7 +606,7 @@ namespace SynAna
             {
                 Code code = new();
 
-                code += leftSide.Code;
+
 
                 Production exp = inclusive_or_expression_line(leftSide);
 
@@ -632,10 +633,10 @@ namespace SynAna
 
                 if (rightSide)
                 {
-                    code += rightSide;
+                    code += leftSide; code += rightSide;
 
                     var place = CreateTemp();
-                    code += $"{place} = {leftSide.Place} | {rightSide.Place}";
+                    code += $"{place} = {leftSide.Place} | {rightSide.Place};";
 
                     Production expLine = inclusive_or_expression_line(new(code, place, true));
 
@@ -644,7 +645,7 @@ namespace SynAna
                 }
             }
 
-            return new(string.Empty, leftSide.Place, true);
+            return leftSide;
         }
 
         Production exclusive_or_expression()
@@ -655,7 +656,7 @@ namespace SynAna
             {
                 Code code = new();
 
-                code += leftSide.Code;
+
 
                 Production exp = exclusive_or_expression_line(leftSide);
 
@@ -682,10 +683,10 @@ namespace SynAna
 
                 if (rightSide)
                 {
-                    code += rightSide;
+                    code += leftSide; code += rightSide;
 
                     var place = CreateTemp();
-                    code += $"{place} = {leftSide.Place} ^ {rightSide.Place}";
+                    code += $"{place} = {leftSide.Place} ^ {rightSide.Place};";
 
                     Production expLine = exclusive_or_expression_line(new(code, place, true));
 
@@ -694,7 +695,7 @@ namespace SynAna
                 }
             }
 
-            return new(string.Empty, leftSide.Place, true);
+            return leftSide;
         }
 
         Production and_expression()
@@ -705,7 +706,7 @@ namespace SynAna
             {
                 Code code = new();
 
-                code += leftSide.Code;
+
 
                 Production exp = and_expression_line(leftSide);
 
@@ -732,11 +733,11 @@ namespace SynAna
 
                 if (rightSide)
                 {
-                    code += rightSide;
+                    code += leftSide; code += rightSide;
 
                     var place = CreateTemp();
 
-                    code += $"{place} = {leftSide.Place} & {rightSide.Place}";
+                    code += $"{place} = {leftSide.Place} & {rightSide.Place};";
 
                     Production expLine = and_expression_line(new(code, place, true));
 
@@ -745,7 +746,7 @@ namespace SynAna
                 }
             }
 
-            return new(string.Empty, leftSide.Place, true);
+            return leftSide;
         }
 
         Production equality_expression()
@@ -756,7 +757,7 @@ namespace SynAna
             {
                 Code code = new();
 
-                code += leftSide.Code;
+
 
                 Production exp = equality_expression_line(leftSide);
 
@@ -783,11 +784,11 @@ namespace SynAna
 
                 if (rightSide)
                 {
-                    code += rightSide;
+                    code += leftSide; code += rightSide;
 
                     var place = CreateTemp();
 
-                    code += $"{place} = {leftSide.Place} == {rightSide.Place}";
+                    code += $"{place} = {leftSide.Place} == {rightSide.Place};";
 
                     Production expLine = equality_expression_line(new(code, place, true));
 
@@ -806,11 +807,11 @@ namespace SynAna
 
                 if (rightSide)
                 {
-                    code += rightSide;
+                    code += leftSide; code += rightSide;
 
                     var place = CreateTemp();
 
-                    code += $"{place} = {leftSide.Place} != {rightSide.Place}";
+                    code += $"{place} = {leftSide.Place} != {rightSide.Place};";
 
                     Production expLine = equality_expression_line(new(code, place, true));
 
@@ -819,7 +820,7 @@ namespace SynAna
                 }
             }
 
-            return new(string.Empty, leftSide.Place, true);
+            return leftSide;
         }
 
         Production relational_expression()
@@ -830,7 +831,7 @@ namespace SynAna
             {
                 Code code = new();
 
-                code += leftSide.Code;
+
 
                 Production exp = relational_expression_line(leftSide);
 
@@ -857,11 +858,11 @@ namespace SynAna
 
                 if (rightSide)
                 {
-                    code += rightSide;
+                    code += leftSide; code += rightSide;
 
                     var place = CreateTemp();
 
-                    code += $"{place} = {leftSide.Place} < {rightSide.Place}";
+                    code += $"{place} = {leftSide.Place} < {rightSide.Place};";
 
                     Production expLine = relational_expression_line(new(code, place, true));
 
@@ -880,11 +881,11 @@ namespace SynAna
 
                 if (rightSide)
                 {
-                    code += rightSide;
+                    code += leftSide; code += rightSide;
 
                     var place = CreateTemp();
 
-                    code += $"{place} = {leftSide.Place} > {rightSide.Place}";
+                    code += $"{place} = {leftSide.Place} > {rightSide.Place};";
 
                     Production expLine = relational_expression_line(new(code, place, true));
 
@@ -903,11 +904,11 @@ namespace SynAna
 
                 if (rightSide)
                 {
-                    code += rightSide;
+                    code += leftSide; code += rightSide;
 
                     var place = CreateTemp();
 
-                    code += $"{place} = {leftSide.Place} <= {rightSide.Place}";
+                    code += $"{place} = {leftSide.Place} <= {rightSide.Place};";
 
                     Production expLine = relational_expression_line(new(code, place, true));
 
@@ -926,11 +927,11 @@ namespace SynAna
 
                 if (rightSide)
                 {
-                    code += rightSide;
+                    code += leftSide; code += rightSide;
 
                     var place = CreateTemp();
 
-                    code += $"{place} = {leftSide.Place} >= {rightSide.Place}";
+                    code += $"{place} = {leftSide.Place} >= {rightSide.Place};";
 
                     Production expLine = relational_expression_line(new(code, place, true));
 
@@ -939,7 +940,7 @@ namespace SynAna
                 }
             }
 
-            return new(string.Empty, leftSide.Place, true);
+            return leftSide;
         }
 
         Production shift_expression()
@@ -950,7 +951,7 @@ namespace SynAna
             {
                 Code code = new();
 
-                code += leftSide.Code;
+
 
                 Production exp = shift_expression_line(leftSide);
 
@@ -977,11 +978,11 @@ namespace SynAna
 
                 if (rightSide)
                 {
-                    code += rightSide;
+                    code += leftSide; code += rightSide;
 
                     var place = CreateTemp();
 
-                    code += $"{place} = {leftSide.Place} << {rightSide.Place}";
+                    code += $"{place} = {leftSide.Place} << {rightSide.Place};";
 
                     Production expLine = shift_expression_line(new(code, place, true));
 
@@ -991,7 +992,7 @@ namespace SynAna
             }
 
 
-            else if(IsToken(Token.ShiftRight))
+            else if (IsToken(Token.ShiftRight))
             {
                 Code code = new();
 
@@ -1001,11 +1002,11 @@ namespace SynAna
 
                 if (rightSide)
                 {
-                    code += rightSide;
+                    code += leftSide; code += rightSide;
 
                     var place = CreateTemp();
 
-                    code += $"{place} = {leftSide.Place} >> {rightSide.Place}";
+                    code += $"{place} = {leftSide.Place} >> {rightSide.Place};";
 
                     Production expLine = shift_expression_line(new(code, place, true));
 
@@ -1014,7 +1015,7 @@ namespace SynAna
                 }
             }
 
-            return new(string.Empty, leftSide.Place, true);
+            return leftSide;
         }
 
         Production additive_expression()
@@ -1025,7 +1026,7 @@ namespace SynAna
             {
                 Code code = new();
 
-                code += leftSide.Code;
+
 
                 Production exp = additive_expression_line(leftSide);
 
@@ -1052,11 +1053,11 @@ namespace SynAna
 
                 if (rightSide)
                 {
-                    code += rightSide;
+                    code += leftSide; code += rightSide;
 
                     var place = CreateTemp();
 
-                    code += $"{place} = {leftSide.Place} + {rightSide.Place}";
+                    code += $"{place} = {leftSide.Place} + {rightSide.Place};";
 
                     Production expLine = additive_expression_line(new(code, place, true));
 
@@ -1075,11 +1076,11 @@ namespace SynAna
 
                 if (rightSide)
                 {
-                    code += rightSide;
+                    code += leftSide; code += rightSide;
 
                     var place = CreateTemp();
 
-                    code += $"{place} = {leftSide.Place} - {rightSide.Place}";
+                    code += $"{place} = {leftSide.Place} - {rightSide.Place};";
 
                     Production expLine = additive_expression_line(new(code, place, true));
 
@@ -1088,7 +1089,7 @@ namespace SynAna
                 }
             }
 
-            return new(string.Empty, leftSide.Place, true);
+            return leftSide;
         }
 
         Production multiplicative_expression()
@@ -1098,8 +1099,6 @@ namespace SynAna
             if (leftSide)
             {
                 Code code = new();
-
-                code += leftSide.Code;
 
                 Production exp = multiplicative_expression_line(leftSide);
 
@@ -1126,11 +1125,11 @@ namespace SynAna
 
                 if (rightSide)
                 {
-                    code += rightSide;
+                    code += leftSide; code += rightSide;
 
                     var place = CreateTemp();
 
-                    code += $"{place} = {leftSide.Place} * {rightSide.Place}";
+                    code += $"{place} = {leftSide.Place} * {rightSide.Place};";
 
                     Production expLine = multiplicative_expression_line(new(code, place, true));
 
@@ -1149,11 +1148,12 @@ namespace SynAna
 
                 if (rightSide)
                 {
+                    code += leftSide;
                     code += rightSide;
 
                     var place = CreateTemp();
 
-                    code += $"{place} = {leftSide.Place} / {rightSide.Place}";
+                    code += $"{place} = {leftSide.Place} / {rightSide.Place};";
 
                     Production expLine = multiplicative_expression_line(new(code, place, true));
 
@@ -1173,11 +1173,12 @@ namespace SynAna
 
                 if (rightSide)
                 {
+                    code += leftSide;
                     code += rightSide;
 
                     var place = CreateTemp();
 
-                    code += $"{place} = {leftSide.Place} % {rightSide.Place}";
+                    code += $"{place} = {leftSide.Place} % {rightSide.Place};";
 
                     Production expLine = multiplicative_expression_line(new(code, place, true));
 
@@ -1186,7 +1187,7 @@ namespace SynAna
                 }
             }
 
-            return new(string.Empty, leftSide.Place, true);
+            return leftSide;
         }
 
         Production unary_expression()
@@ -1210,6 +1211,7 @@ namespace SynAna
                 ReadToken();
 
                 Production postFixExp = unary_expression();
+
                 if (postFixExp)
                     return postFixExp;
             }
@@ -1249,7 +1251,7 @@ namespace SynAna
                         ReadToken();
 
                         if (postfix_expression_line(leftSide))
-                            return new(string.Empty, leftSide.Place, true);
+                            return leftSide;
 
                     }
                 }
@@ -1259,7 +1261,7 @@ namespace SynAna
                     ReadToken();
 
                     if (postfix_expression_line(leftSide))
-                        return new(string.Empty, leftSide.Place, true);
+                        return leftSide;
 
                 }
 
@@ -1274,7 +1276,7 @@ namespace SynAna
                     ReadToken();
 
                     if (postfix_expression_line(leftSide))
-                        return new(string.Empty, leftSide.Place, true);
+                        return leftSide;
                 }
             }
 
@@ -1287,7 +1289,7 @@ namespace SynAna
                     ReadToken();
 
                     if (postfix_expression_line(leftSide))
-                        return new(string.Empty, leftSide.Place, true);
+                        return leftSide;
 
                 }
             }
@@ -1299,7 +1301,7 @@ namespace SynAna
                 ReadToken();
 
                 if (postfix_expression_line(leftSide))
-                    return new(string.Empty, leftSide.Place, true);
+                    return leftSide;
             }
 
             else if (IsToken(Token.Decrement))
@@ -1307,7 +1309,7 @@ namespace SynAna
                 ReadToken();
 
                 if (postfix_expression_line(leftSide))
-                    return new(string.Empty, leftSide.Place, true);
+                    return leftSide;
             }
 
             return true;
@@ -1321,7 +1323,7 @@ namespace SynAna
 
                 ReadToken();
 
-                return new(string.Empty, currentIdentifier, true);
+                return new(string.Empty, $"(* {currentIdentifier})", true);
             }
 
             if (IsToken(Token.IntegerConstant))
@@ -1361,12 +1363,13 @@ namespace SynAna
             {
                 ReadToken();
 
-                if (expression())
+                Production exp = expression();
+                if (exp)
                 {
                     if (IsToken(Token.ParenthesisClose))
                     {
                         ReadToken();
-                        return true;
+                        return exp;
                     }
                 }
             }
@@ -1376,14 +1379,13 @@ namespace SynAna
 
         Production expression()
         {
-
             Production leftSide = assignment_expression(); //left side
 
             if (leftSide)
             {
                 Code code = new();
 
-                code += leftSide.Code;
+
 
                 Production exp = expression_line(leftSide);
 
@@ -1410,11 +1412,11 @@ namespace SynAna
 
                 if (rightSide)
                 {
-                    code += rightSide;
+                    code += leftSide; code += rightSide;
 
                     var place = CreateTemp();
 
-                    code += $"{place} = {leftSide.Place} , {rightSide.Place}";
+                    code += $"{place} = {leftSide.Place} , {rightSide.Place};";
 
                     Production expLine = expression_line(new(code, place, true));
 
@@ -1423,7 +1425,7 @@ namespace SynAna
                 }
             }
 
-            return new(string.Empty, leftSide.Place, true);
+            return leftSide;
         }
 
         Production assignment_expression()
@@ -1440,6 +1442,8 @@ namespace SynAna
 
                 Production assignmentOperator = assignment_operator();
 
+                var assignmentToken = assignmentOperator.GetAttribute<TokenResult>("token");
+
                 if (assignmentOperator)
                 {
                     var pos_assing = SetPosition();
@@ -1447,13 +1451,7 @@ namespace SynAna
                     var rightSideExp = assignment_expression();
 
                     if (rightSideExp)
-                    {
-                        expCode += rightSideExp.Code;
-                    
-                        expCode += $"(* {unaryExp.Place}) = {rightSideExp.Place};";
-
-                        return new(expCode, unaryExp.Place, true);
-                    }
+                        return BuildAssignmentExpression(ref expCode, unaryExp, rightSideExp, assignmentToken);
 
                     else
                     {
@@ -1461,16 +1459,9 @@ namespace SynAna
 
                         Production rightLogicalOrExp = logical_or_expression();
 
-
                         if (rightLogicalOrExp)
-                        {
-                            Code code = $"{unaryExp.Place} = {rightLogicalOrExp.Place};";
+                            return BuildAssignmentExpression(ref expCode, unaryExp, rightLogicalOrExp, assignmentToken);
 
-                            expCode += rightLogicalOrExp.Code;
-                            expCode += code;
-
-                            return new(expCode, unaryExp.Place, true);
-                        }
                     }
                 }
             }
@@ -1485,6 +1476,39 @@ namespace SynAna
             return false;
         }
 
+        private  Production BuildAssignmentExpression(ref Code expCode, Production leftSide, Production rightSide, TokenResult assignmentOperator)
+        {
+            expCode += rightSide.Code;
+
+            var assignment = GetAssignmentCode(assignmentOperator, leftSide.Place, rightSide.Place);
+
+            expCode += assignment;
+
+            return new(expCode, leftSide.Place, true);
+        }
+
+        private Code GetAssignmentCode(TokenResult assignmentOperator, string leftSidePlace, string rightSidePlace)
+        {
+            Code code = new();
+
+            if(assignmentOperator.Token == Token.Assign)
+                code = $"{leftSidePlace} = {rightSidePlace};";
+            else
+            {
+                var leftSideTemp = CreateTemp();
+
+                var operationTemp = CreateTemp();
+
+                code += $"{leftSideTemp} = {leftSidePlace};";
+
+                code += $"{operationTemp} = {leftSideTemp} {assignmentOperator.Lexical[..^1]} {rightSidePlace};";
+
+                code += $"{leftSidePlace} = {operationTemp};";
+            }
+
+            return code;
+        }
+
         Production assignment_operator()
         {
             if (IsToken(Token.Assign)
@@ -1496,8 +1520,11 @@ namespace SynAna
                 || IsToken(Token.LeftAssign)
                 || IsToken(Token.RightAssign))
             {
+                var token = _currentTokenResult;
+
                 ReadToken();
-                return true;
+
+                return new(true, ("token", token));
             }
 
             return false;
@@ -2188,11 +2215,11 @@ namespace SynAna
 
                 code += expression;
 
-                code += $"{temp} = {valueToCompare} == {expression.Place}";
+                code += $"{temp} = {valueToCompare} == {expression.Place};";
 
                 if (expression)
                 {
-                    code += $"goFalse {temp} {nextCaseLabel}";
+                    code += $"goFalse {temp} {nextCaseLabel};";
 
                     if (IsToken(Token.Collon))
                     {
